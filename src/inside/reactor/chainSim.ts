@@ -21,7 +21,9 @@ export const ROD_XZ: ReadonlyArray<readonly [number, number]> = [
   [-3, 3], [-1, 3], [1, 3], [3, 3],
 ];
 export const ROD_RADIUS = 0.28;
-let ROD_CAPTURE = 0.6;
+let ROD_CAPTURE = 0.85; // neutrons this close to a lowered rod are soaked up
+/** Rod setting where a started reaction holds steady (k near 1) with water in. */
+export const STEADY_RODS = 0.35;
 
 export const K_U235 = 0;
 export const K_U238 = 1;
@@ -48,15 +50,19 @@ let P_CAPTURE238 = [0.02, 0.05, 0.03]; // chance a neutron touching a U-238 is s
 let MODERATE_PER_UNIT = 2.8; // water bumps that slow a neutron down one level, per unit of path
 let SCATTER_PER_UNIT = 4.0; // water bumps that only change direction (slow neutrons)
 const WATER_ABSORB_PER_UNIT = 0.012;
+let REFLECT = 0; // chance the water outside the box bounces a leaving neutron back in
 const MAX_AGE = 14;
-let REFILL_DELAY_MIN = 3.5;
-let REFILL_DELAY_SPREAD = 3;
+let REFILL_DELAY_MIN = 8; // used atoms are swapped for fresh ones slowly, so the reaction can keep going
+let REFILL_DELAY_SPREAD = 4;
+let MAX_SPENT_SHARE = 0.25; // most atoms that can sit used up at once; past this, used atoms are swapped at once
 const GUIDED_T = 0.75; // a neutron you fire flies straight at its target for this long
 const FATE_N = 140;
 const FATE_WINDOW_S = 8;
 
 /** Tuning hook for headless tests. */
-export function tune(o: { contact?: number; rod?: number; pf?: number[]; pc?: number[]; mod?: number; scat?: number; refill?: number; refillSpread?: number }) {
+export function tune(o: { contact?: number; rod?: number; pf?: number[]; pc?: number[]; mod?: number; scat?: number; refill?: number; refillSpread?: number; reflect?: number; maxSpent?: number }) {
+  if (o.reflect != null) REFLECT = o.reflect;
+  if (o.maxSpent != null) MAX_SPENT_SHARE = o.maxSpent;
   if (o.contact != null) CONTACT = o.contact;
   if (o.rod != null) ROD_CAPTURE = o.rod;
   if (o.pf) P_FISSION = o.pf;
@@ -303,15 +309,43 @@ export class ChainSim {
     return true;
   }
 
-  /** Ready atoms that can split, near the middle. */
+  /** True when atom n sits in or right next to a lowered control rod (a neutron fired at it would be soaked up first). */
+  private nearRod(n: number): boolean {
+    if (this.params.rods <= 0.001) return false;
+    const bottom = HALF - Math.max(0, Math.min(1, this.params.rods)) * HALF * 2;
+    if (this.ny[n] < bottom - 1.05) return false;
+    const r = ROD_CAPTURE + 1.05;
+    for (let k = 0; k < ROD_XZ.length; k++) {
+      const ddx = this.nx[n] - ROD_XZ[k][0], ddz = this.nz[n] - ROD_XZ[k][1];
+      if (ddx * ddx + ddz * ddz < r * r) return true;
+    }
+    return false;
+  }
+
+  /** Ready atoms that can split, near the middle, preferring ones clear of the control rods. */
   private fissileTargets(inner: number): number[] {
     const out: number[] = [];
+    const clear: number[] = [];
     for (let n = 0; n < this.nCount; n++) {
       if (this.state[n] !== S_READY || (this.kind[n] !== K_U235 && this.kind[n] !== K_PU239)) continue;
       if (Math.abs(this.nx[n]) > inner || Math.abs(this.ny[n]) > inner || Math.abs(this.nz[n]) > inner) continue;
       out.push(n);
+      if (!this.nearRod(n)) clear.push(n);
     }
-    return out;
+    return clear.length ? clear : out;
+  }
+
+  /** Fire a small burst of slow neutrons at different atoms (used by "Start a steady reaction"). */
+  fireBurst(count: number) {
+    const t = this.fissileTargets(HALF - 1.2);
+    for (let k = 0; k < count; k++) {
+      if (!t.length) { this.fireFromFace(); continue; }
+      const j = Math.floor(this.rand() * t.length);
+      const n = t[j];
+      t[j] = t[t.length - 1]; t.pop();
+      this.randDir(this.tmp, 0);
+      this.fireAt(n, this.tmp[0], this.tmp[1], this.tmp[2]);
+    }
   }
 
   /** A slow neutron that flies straight at atom n from about one atom spacing away. */
@@ -325,14 +359,7 @@ export class ChainSim {
 
   /** Fire a slow neutron at a random atom that can split (falls back to a random face). */
   fireRandom() {
-    const t = this.fissileTargets(HALF - 1.2);
-    if (t.length) {
-      const n = t[Math.floor(this.rand() * t.length)];
-      this.randDir(this.tmp, 0);
-      this.fireAt(n, this.tmp[0], this.tmp[1], this.tmp[2]);
-      return;
-    }
-    this.fireFromFace();
+    this.fireBurst(1);
   }
 
   /** Fire a neutron in from a random face toward the middle of the cube. */
@@ -507,7 +534,18 @@ export class ChainSim {
       }
 
       // Left the cube: lost.
-      if (x < -HALF || x > HALF || y < -HALF || y > HALF || z < -HALF || z > HALF) { this.losses.leak++; this.kill(i, false, false); continue; }
+      if (x < -HALF || x > HALF || y < -HALF || y > HALF || z < -HALF || z > HALF) {
+        if (P.water && REFLECT > 0 && r() < REFLECT) {
+          // Bounced back in by the water outside the box (a reflector).
+          if (x < -HALF || x > HALF) { this.dx[i] = -this.dx[i]; this.px[i] = Math.max(-HALF, Math.min(HALF, x)); }
+          if (y < -HALF || y > HALF) { this.dy[i] = -this.dy[i]; this.py[i] = Math.max(-HALF, Math.min(HALF, y)); }
+          if (z < -HALF || z > HALF) { this.dz[i] = -this.dz[i]; this.pz[i] = Math.max(-HALF, Math.min(HALF, z)); }
+          this.lastHit[i] = -1;
+          aliveCount++;
+          continue;
+        }
+        this.losses.leak++; this.kill(i, false, false); continue;
+      }
       if (this.age[i] > MAX_AGE) { this.losses.age++; this.kill(i, false, true); continue; }
 
       // Control rods soak up neutrons.
@@ -559,6 +597,9 @@ export class ChainSim {
 
     // Nuclei states
     let busy = false;
+    let spent = 0;
+    for (let n = 0; n < this.nCount; n++) if (this.state[n] === S_EMPTY) spent++;
+    let overSpent = spent - Math.floor(this.nCount * MAX_SPENT_SHARE);
     for (let n = 0; n < this.nCount; n++) {
       const sN = this.state[n];
       if (this.hitFlash[n] > 0) this.hitFlash[n] = Math.max(0, this.hitFlash[n] - dt * 2.5);
@@ -574,7 +615,7 @@ export class ChainSim {
       if (sN === S_WOBBLE) { busy = true; if (this.timer[n] > WOBBLE_T) { this.state[n] = S_PEANUT; this.timer[n] = 0; } }
       else if (sN === S_PEANUT) { busy = true; if (this.timer[n] > PEANUT_T) this.split(n); }
       else if (sN === S_EMPTY) {
-        if (this.timer[n] > this.refillDelay[n]) { this.state[n] = S_REFILL; this.timer[n] = 0; this.kind[n] = this.refillKind[n]; }
+        if (this.timer[n] > this.refillDelay[n] || overSpent-- > 0) { this.state[n] = S_REFILL; this.timer[n] = 0; this.kind[n] = this.refillKind[n]; }
       } else if (sN === S_REFILL) {
         if (this.timer[n] > REFILL_T) { this.state[n] = S_READY; this.timer[n] = 0; }
       }

@@ -164,6 +164,22 @@ function District({ d, index }: { d: CityDistrict; index: number }) {
   );
 }
 
+/** Tag heights alternate a little so neighbouring tags do not sit on the same screen row. */
+const TAG_HEIGHT: Record<CityDistrict, number> = { homes: 10, commercial: 13, transport: 10, factory: 13, datacenter: 11 };
+/** More dark districts than this and one combined tag shows over the substation instead. */
+const MAX_SEPARATE_TAGS = 3;
+
+function TagPill({ text }: { text: string }) {
+  return (
+    <div
+      className="panel xsmall"
+      style={{ padding: '2px 8px', whiteSpace: 'nowrap', color: 'var(--ink)', pointerEvents: 'none', userSelect: 'none', borderRadius: 999, boxShadow: 'none' }}
+    >
+      {text}
+    </div>
+  );
+}
+
 /** Small "No power" tags over districts in full blackout (store hour, not the title display hour). */
 function BlackoutTags() {
   const key = useApp((s) => {
@@ -175,18 +191,22 @@ function BlackoutTags() {
     }).join('|');
   });
   if (!key) return null;
+  const dark = key.split('|') as CityDistrict[];
+  if (dark.length > MAX_SEPARATE_TAGS) {
+    return (
+      <Html position={[0, 15, 0]} center zIndexRange={[10, 0]} pointerEvents="none">
+        <TagPill text={`No power in ${dark.length} districts`} />
+      </Html>
+    );
+  }
   return (
     <>
-      {key.split('|').map((d) => {
-        const c = DISTRICT_WEDGES[d as CityDistrict].centroid;
+      {dark.map((d) => {
+        // Over the district's own centroid, nudged a little outward so neighbouring tags separate.
+        const c = DISTRICT_WEDGES[d].centroid;
         return (
-          <Html key={d} position={[c[0], 16, c[1]]} center zIndexRange={[0, 0]} pointerEvents="none">
-            <div
-              className="panel xsmall"
-              style={{ padding: '3px 8px', whiteSpace: 'nowrap', color: 'var(--ink)', pointerEvents: 'none', borderRadius: 999 }}
-            >
-              No power
-            </div>
+          <Html key={d} position={[c[0] * 1.2, TAG_HEIGHT[d], c[1] * 1.2]} center zIndexRange={[10, 0]} pointerEvents="none">
+            <TagPill text="No power" />
           </Html>
         );
       })}
@@ -202,7 +222,7 @@ function DistrictCard() {
   if (!d || hidden || d === 'hydrogen') return null;
   const c = DISTRICT_WEDGES[d].centroid;
   return (
-    <Html position={[c[0], 18, c[1]]} zIndexRange={[0, 0]}>
+    <Html position={[c[0], 18, c[1]]} zIndexRange={[20, 11]}>
       <DistrictCardBody d={d} label={DISTRICT_LABELS[d]} />
     </Html>
   );

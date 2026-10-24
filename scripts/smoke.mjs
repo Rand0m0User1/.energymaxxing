@@ -47,7 +47,7 @@ console.log(`simulate() on slider change: ${timing.toFixed(1)} ms`);
 await step('lab-abudhabi-noon', () => app(`s.setScreen('lab'); s.applyPreset('abuDhabi'); s.setTimeOfDay(12);`));
 await step('lab-abudhabi-night', () => app(`s.setTimeOfDay(22);`));
 await step('lab-helsinki-dec', () => app(`s.setPlace('helsinki'); s.setTimeOfDay(13);`));
-await step('lab-helsinki-fission', () => app(`s.setPlant('fission', { on: true, gw: 0.8 }); s.setTimeOfDay(20);`));
+await step('lab-helsinki-fission', () => app(`s.setPlant('fission', { on: true, gw: 1.3 }); s.setTimeOfDay(20);`));
 await step('lab-week-chart', () => app(`s.setChartRange('week');`));
 await step('map-view', () => app(`s.setCameraMode('map');`));
 await step('fly-reactor', () => app(`s.setCameraMode('orbit'); s.flyTo('reactor'); s.selectStation('reactor');`));

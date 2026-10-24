@@ -137,7 +137,7 @@ function IndustryCard({ kind, title, plain, price, share, canStore, product, bre
         <h4>{title}</h4>
         <StatePill state={industryState(kind, price)} />
       </div>
-      <p className="tool-p">{plain}</p>
+      <div className="tool-p">{plain}</div>
       <KV k="Energy share of cost">{pct(share)}</KV>
       <ShareBar share={share} />
       <KV k="Can it store its product and run only when power is cheap?">{canStore}</KV>
@@ -177,13 +177,13 @@ function WastedSun() {
       <div className="tool-card">
         <KV k="Wasted sun in this run (how much)">{twh(curtailed)}</KV>
         {flex && <KV k="Used by industry instead">{twh(absorbed)}</KV>}
-        <p className="tool-p num">
+        <div className="tool-p num">
           {curtailed + absorbed <= 0
             ? 'No wasted sun in this run yet. Add more solar in the City Lab, or try "Build like Casey Handmer".'
             : flex
               ? `That is enough electricity to make about ${tonnes(hydrogenTonnesFromTWh(absorbed))} of hydrogen.`
               : `That could make about ${tonnes(hydrogenTonnesFromTWh(curtailed))} of hydrogen.`}
-        </p>
+        </div>
         <RealTerm>curtailment, absorbed by flexible load</RealTerm>
       </div>
     </Section>
@@ -201,11 +201,11 @@ export default function IndustryQuarter() {
   return (
     <>
       <Section>
-        <p className="tool-lead">Turn the dial to make electricity cheaper. Watch which industries grow.</p>
+        <div className="tool-lead">Turn the dial to make electricity cheaper. Watch which industries grow.</div>
         <div className="tool-row" style={{ alignItems: 'center', gap: 16 }}>
           <PriceDial price={p} onChange={set} />
           <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <p className="tool-p">Drag the knob, or use the arrow keys. Today, new solar costs about <Fact k="lcoeSolarLow" format={(v) => `$${v}`} /> to <Fact k="lcoeSolarHigh" format={(v) => `$${v}`} /> per MWh.</p>
+            <div className="tool-p">Drag the knob, or use the arrow keys. Today, new solar costs about <Fact k="lcoeSolarLow" format={(v) => `$${v}`} /> to <Fact k="lcoeSolarHigh" format={(v) => `$${v}`} /> per MWh.</div>
             <Slider value={priceToDial(p)} min={0} max={1} step={0.005} label="Electricity price" onChange={(t) => set(tidyPrice(dialToPrice(t)))} />
             <div className="tool-row between xsmall faint">
               <span><Fact k="iqPriceMax" format={usd} /></span>
@@ -255,9 +255,9 @@ export default function IndustryQuarter() {
         </div>
       </Section>
 
-      <p className="tool-aha">
+      <div className="tool-aha">
         Cheaper power does not help every industry the same way. Industries that can store their product and run when power is cheap win the most.
-      </p>
+      </div>
 
       <WastedSun />
 

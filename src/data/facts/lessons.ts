@@ -12,7 +12,9 @@ export const lessonsFacts = {
   lessonStartBatteryGWh: f(4, 'GWh', 'Starting battery size in the Abu Dhabi lesson', 'assumption', 'assumption'),
   // Lesson 5
   lessonBerlinWindGW: f(1.5, 'GW', 'Wind added to the Berlin city in the dark doldrums lesson', 'assumption', 'assumption'),
-  firmFissionGW: f(0.6, 'GW', 'Reactor added as always-on power in the lessons and demo', 'assumption', 'assumption'),
+  // 1.3 GW: a bit more than the model city's average winter use (about 1.1–1.2 GW in Berlin and Helsinki
+  // in December), so the battery only has to cover the evening peak (about 1.5 GW). Checked in claims.test.ts.
+  firmFissionGW: f(1.3, 'GW', 'Reactor added as always-on power in the lessons and demo: a bit more than the city uses on an average winter day, so the battery only covers the evening peak', 'assumption', 'assumption'),
   // Lesson 6
   handmerSolarMultiple: f(10, '× average use', "Handmer test: solar sized to ten times the city's average use", 'assumption', 'handmer2025'),
   surplusPriceTest: f(20, '$/MWh', 'Price paid for wasted sun in the Handmer lesson', 'assumption', 'assumption'),

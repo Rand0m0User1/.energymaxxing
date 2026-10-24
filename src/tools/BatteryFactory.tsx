@@ -119,17 +119,17 @@ export default function BatteryFactory() {
   return (
     <>
       <Section>
-        <p className="tool-lead">
+        <div className="tool-lead">
           Each time the world doubles the total number of batteries it has ever made, the price falls by about the same share. Factories learn.
-        </p>
+        </div>
         <RealTerm>learning rate (Wright&rsquo;s law)</RealTerm>
       </Section>
 
       <Section title="Pick a battery type">
         <Segmented value={chem} options={CHEM_OPTIONS} label="Battery chemistry" onChange={(c) => setTools({ batteryChemistry: c })} />
-        <p className="tool-p">
+        <div className="tool-p">
           {CHEM_TEXT[chem].plain} Pack price today: <Fact k={CHEMISTRY_START[chem]} format={(v) => `$${v}`} /> per kWh (how much).
-        </p>
+        </div>
         <RealTerm>{CHEM_TEXT[chem].real}</RealTerm>
       </Section>
 
@@ -165,16 +165,16 @@ export default function BatteryFactory() {
         </div>
       </Section>
 
-      <p className="tool-aha">
+      <div className="tool-aha">
         Battery cells keep getting cheaper fast. The whole installed system does not, and the hold-ups are connections, materials and permits.
-      </p>
+      </div>
 
       <Section title="What slows grid batteries down">
         <div className="tool-grid2">
           {BOTTLENECKS.map((b) => (
             <div key={b.title} className="tool-card">
               <h4>{b.title}</h4>
-              <p className="tool-p">{b.body}</p>
+              <div className="tool-p">{b.body}</div>
               <RealTerm>{b.real}</RealTerm>
             </div>
           ))}
@@ -182,11 +182,11 @@ export default function BatteryFactory() {
       </Section>
 
       <Section title="Compared with solar">
-        <p className="tool-p">
+        <div className="tool-p">
           Solar panels have learned even faster. Over their whole history they got <Fact k="solarLearningRateOverall" percent digits={0} /> cheaper per doubling,
           and <Fact k="solarLearningRateSince2007" percent digits={0} /> per doubling in recent years, weighted by how much was made.
           Pack prices fell <Fact k="batteryPackFall2025" percent digits={0} /> in a single recent year.
-        </p>
+        </div>
       </Section>
     </>
   );

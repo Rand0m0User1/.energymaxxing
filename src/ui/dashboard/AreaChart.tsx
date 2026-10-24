@@ -28,13 +28,15 @@ function NowLine({ win }: { win: ChartWindow }) {
   );
 }
 
-export default memo(function AreaChart() {
+/** compact: a small chart for the lesson strip. It follows the range the lesson sets, with no switch and a shorter header. */
+export default memo(function AreaChart({ compact = false }: { compact?: boolean }) {
   const result = useApp((s) => s.result);
   const range = useApp((s) => s.chartRange);
   const setRange = useApp((s) => s.setChartRange);
   const hl = useApp((s) => s.highlightSource);
   // Subscribes to the window start only: changes when the day changes, not every tick.
   const start = useApp((s) => chartWindowStart(s.result, s.chartRange, s.hourOfYear));
+  const ids = compact ? { clip: 'dash-chart-clip-c', hatch: 'dash-unserved-hatch-c' } : { clip: 'dash-chart-clip', hatch: 'dash-unserved-hatch' };
 
   const win = useMemo(() => chartWindow(result, range, start), [result, range, start]);
   const paths = useMemo(() => buildChart(result, win), [result, win]);
@@ -61,7 +63,12 @@ export default memo(function AreaChart() {
   const title = win.range === 'year' && !win.oneDay ? 'Daily average, over the year' : win.oneDay ? 'Over the simulated day' : win.range === 'week' ? 'Over this week' : 'Over this day';
 
   return (
-    <div className="dash-chart">
+    <div className={`dash-chart ${compact ? 'dash-chart-compact' : ''}`}>
+      {compact ? (
+        <div className="dash-label">
+          {win.oneDay ? 'Over the simulated day' : win.range === 'year' ? 'Over the year, daily average' : win.range === 'week' ? 'This week' : 'Today'}
+        </div>
+      ) : (
       <div className="dash-row-between">
         <div>
           <div className="dash-label">Where the power came from</div>
@@ -73,6 +80,7 @@ export default memo(function AreaChart() {
           <Segmented value={range} options={RANGE_OPTIONS} onChange={setRange} label="Chart range" />
         )}
       </div>
+      )}
       <svg
         className="dash-chart-svg"
         viewBox={`0 0 ${CHART_W} ${CHART_H + AXIS_H}`}
@@ -81,19 +89,19 @@ export default memo(function AreaChart() {
         onClick={onClick}
       >
         <defs>
-          <clipPath id="dash-chart-clip"><rect x={0} y={0} width={CHART_W} height={CHART_H} /></clipPath>
-          <pattern id="dash-unserved-hatch" width={4} height={4} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <clipPath id={ids.clip}><rect x={0} y={0} width={CHART_W} height={CHART_H} /></clipPath>
+          <pattern id={ids.hatch} width={4} height={4} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <rect width={4} height={4} fill={UNSERVED_COLOR} opacity={0.75} />
             <line x1={0} y1={0} x2={0} y2={4} stroke="#000" strokeWidth={1.5} opacity={0.5} />
           </pattern>
         </defs>
         <rect x={0} y={0} width={CHART_W} height={CHART_H} fill="transparent" />
-        <g clipPath="url(#dash-chart-clip)">
+        <g clipPath={`url(#${ids.clip})`}>
           {paths.curtailedD && <path d={paths.curtailedD} fill={CURTAILED_COLOR} opacity={0.55} />}
           {paths.areas.map((a) => (
             <path key={a.id} d={a.d} fill={SOURCE_COLORS[a.id]} opacity={fade(a.id)} />
           ))}
-          {paths.unservedD && <path d={paths.unservedD} fill="url(#dash-unserved-hatch)" />}
+          {paths.unservedD && <path d={paths.unservedD} fill={`url(#${ids.hatch})`} />}
           {paths.demandD && <path d={paths.demandD} fill="none" stroke={DEMAND_COLOR} strokeWidth={1.25} strokeLinejoin="round" />}
         </g>
         {paths.gridValue > 0 && (

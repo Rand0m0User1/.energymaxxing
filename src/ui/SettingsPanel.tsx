@@ -47,6 +47,8 @@ export default function SettingsPanel() {
   const presenter = useApp((s) => s.presenter);
   const setPresenter = useApp((s) => s.setPresenter);
   const showCosts = useControlVisible('advancedCosts');
+  // In a lesson step only the cost controls are shown here; the rest of the settings wait for the sandbox.
+  const all = useApp((s) => s.visibleControls === 'all');
   const yMin = fv('uiYearMin');
   const yMax = fv('uiYearMax');
   const fusionYear = fv('fusionMinYear');
@@ -54,6 +56,7 @@ export default function SettingsPanel() {
 
   return (
     <div>
+      {all && (<>
       <div className="plant-card">
         <div className="plant-head">
           <span className="plant-name">Year</span>
@@ -91,6 +94,7 @@ export default function SettingsPanel() {
         </div>
         <div className="note" style={{ marginTop: 4 }}>Change it to get a different run of cloudy and windy days.</div>
       </div>
+      </>)}
 
       {showCosts && (
         <>
@@ -130,6 +134,7 @@ export default function SettingsPanel() {
         </>
       )}
 
+      {all && (<>
       <div className="section-title">Display</div>
       <ToggleRow label="Reduce motion" checked={reducedMotion} onChange={setReducedMotion}>
         Fewer moving particles and no camera flights.
@@ -137,6 +142,7 @@ export default function SettingsPanel() {
       <ToggleRow label="Presenter mode" checked={presenter} onChange={setPresenter}>
         Bigger numbers, fewer hints. Press P to switch.
       </ToggleRow>
+      </>)}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 // Quiet pill near the bottom centre when the camera is next to a station: "Press E or click to look inside".
+// Hidden on the title screen, in map view, on the tour screen (lessons and the lesson picker), while an inside
+// view, a tool or presenter mode is open, and when the nearest station is the city itself.
 import { useApp } from '../store';
 import { STATIONS } from '../world/layout';
 import { openStation } from './live';
@@ -9,9 +11,12 @@ export default function StationPrompt() {
   const inside = useApp((s) => s.inside);
   const tool = useApp((s) => s.tool);
   const screen = useApp((s) => s.screen);
+  const cameraMode = useApp((s) => s.cameraMode);
   const presenter = useApp((s) => s.presenter);
   const openTool = useApp((s) => s.openTool);
-  if (!near || inside || (tool && !(screen === 'beyond' && tool === 'beyond')) || presenter) return null;
+  if (!near || near === 'city') return null;
+  if (screen === 'title' || screen === 'tour' || cameraMode === 'map') return null;
+  if (inside || tool || presenter) return null;
   const st = STATIONS[near];
   if (!st) return null;
   const toolName = near === 'batteryFactory' ? 'the Battery Factory' : near === 'industry' ? 'the Industry Quarter' : null;

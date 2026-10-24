@@ -77,18 +77,31 @@ function frontOf(st: Station): THREE.Vector3 {
   return new THREE.Vector3(p.x, EYE_HEIGHT, p.z);
 }
 
-function nearestStation(x: number, z: number): StationId | null {
+/**
+ * Station nearest a ground point, or null if none is within its radius + margin.
+ * byEdge ranks by distance to the footprint edge (walking), otherwise by distance to the centre (orbit target).
+ */
+export function nearestStation(x: number, z: number, margin = 18, byEdge = false): StationId | null {
   let best: StationId | null = null;
   let bestD = Infinity;
   for (const id of STATION_IDS) {
     const st = STATIONS[id];
     const d = Math.hypot(x - st.pos[0], z - st.pos[1]);
-    if (d < st.radius + 18 && d - st.radius < bestD) {
+    if (d >= st.radius + margin) continue;
+    const score = byEdge ? d - st.radius : d;
+    if (score < bestD) {
       best = id;
-      bestD = d - st.radius;
+      bestD = score;
     }
   }
   return best;
+}
+
+/** nearStation rule: orbit uses the controls target (radius + 12), walk the camera (radius + 18); the city counts as none. */
+export function nearStationFor(mode: CameraMode, focus: { x: number; z: number }): StationId | null {
+  if (mode === 'map') return null;
+  const id = mode === 'walk' ? nearestStation(focus.x, focus.z, 18, true) : nearestStation(focus.x, focus.z, 12, false);
+  return id === 'city' ? null : id;
 }
 
 function isTypingTarget(t: EventTarget | null) {
@@ -125,6 +138,8 @@ export default function CameraRig() {
 
   const finish = (tw: { toPos: THREE.Vector3; toTarget: THREE.Vector3; kind: Kind }) => {
     camera.position.copy(tw.toPos);
+    // Re-evaluate nearStation on the next frame (the target is now the station centre).
+    nearTimer.current = 0;
     if (tw.kind === 'walk') {
       const d = tw.toTarget.clone().sub(tw.toPos);
       walk.current.yaw = Math.atan2(-d.x, -d.z);
@@ -142,6 +157,8 @@ export default function CameraRig() {
 
   const startTween = (toPos: THREE.Vector3, toTarget: THREE.Vector3, kind: Kind) => {
     const tw = { fromPos: camera.position.clone(), toPos, fromTarget: lookTarget(toTarget), toTarget, t: 0, dur: FLY_S, kind };
+    // No station prompt while flying: the old one would point at the place we are leaving.
+    useApp.getState().setNearStation(null);
     if (useApp.getState().reducedMotion) {
       tween.current = null;
       finish(tw);
@@ -329,11 +346,11 @@ export default function CameraRig() {
     nearTimer.current -= dt;
     if (nearTimer.current <= 0) {
       nearTimer.current = 0.25;
-      if (s.cameraMode === 'map' || tw) {
-        if (s.cameraMode === 'map') s.setNearStation(null);
+      if (tween.current) {
+        s.setNearStation(null);
       } else {
         const focus = s.cameraMode === 'walk' || !c ? camera.position : c.target;
-        s.setNearStation(nearestStation(focus.x, focus.z));
+        s.setNearStation(nearStationFor(s.cameraMode, focus));
       }
     }
   });

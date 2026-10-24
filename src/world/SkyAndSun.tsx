@@ -9,9 +9,21 @@ import { worldFrame, smoothstep } from './worldFrame';
 const WARM = new THREE.Color('#E9B38A');
 const SUN_WHITE = new THREE.Color('#FFF6EA');
 const SUN_WARM = new THREE.Color('#FFB27A');
-const NIGHT_FILL = new THREE.Color('#566A92');
-const NIGHT_GROUND = new THREE.Color('#2A2F38');
+const NIGHT_FILL = new THREE.Color('#8EA4D2');
+const NIGHT_GROUND = new THREE.Color('#3A4356');
 const WHITE = new THREE.Color('#ffffff');
+
+/**
+ * Soft night light so the island stays readable after dark without looking like day.
+ * Earth: cool moonlight from the south-east. Moon: earthshine from where Earth hangs in the sky.
+ * Orbit and Mars: faint starlight from overhead.
+ */
+const NIGHT_KEY: Record<'earth' | 'moon' | 'orbit' | 'mars', { color: string; intensity: number; pos: [number, number, number] }> = {
+  earth: { color: '#B7C8EE', intensity: 0.5, pos: [160, 320, 240] },
+  moon: { color: '#A9C6F2', intensity: 0.55, pos: [-210, 260, -240] },
+  orbit: { color: '#A3B2CC', intensity: 0.4, pos: [60, 400, 120] },
+  mars: { color: '#B4BACB', intensity: 0.4, pos: [120, 340, 200] },
+};
 
 const tmpA = new THREE.Color();
 const tmpB = new THREE.Color();
@@ -23,6 +35,8 @@ export default function SkyAndSun() {
   const scene = useThree((s) => s.scene);
   const sun = useRef<THREE.DirectionalLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
+  const moon = useRef<THREE.DirectionalLight>(null);
+  const nightKey = NIGHT_KEY[body];
 
   const colors = useMemo(() => ({
     day: new THREE.Color(place.skyDay),
@@ -79,9 +93,13 @@ export default function SkyAndSun() {
       h.color.copy(NIGHT_FILL).lerp(airless ? tmpA.set('#9aa3b4') : colors.hemiDay, dl);
       h.groundColor.copy(NIGHT_GROUND).lerp(tmpB.copy(colors.ground).multiplyScalar(0.7), dl);
       const dayI = airless ? 0.35 : 1.0;
-      const nightI = airless ? 0.3 : 0.55;
+      const nightI = airless ? 0.4 : 0.45;
       h.intensity = nightI + (dayI - nightI) * dl;
     }
+
+    // Moonlight / earthshine / starlight: fades in as the sun goes down, off in full daylight.
+    const m = moon.current;
+    if (m) m.intensity = nightKey.intensity * (1 - dl);
   });
 
   return (
@@ -103,6 +121,7 @@ export default function SkyAndSun() {
         shadow-bias={-0.0004}
         shadow-normalBias={0.4}
       />
+      <directionalLight ref={moon} color={nightKey.color} intensity={0} position={nightKey.pos} />
       {body !== 'earth' && <Stars body={body} />}
       {body === 'moon' && <EarthInSky />}
       {body === 'orbit' && <EarthBelow />}

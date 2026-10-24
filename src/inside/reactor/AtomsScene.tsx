@@ -38,7 +38,14 @@ export default function AtomsScene({ sim, bridge }: { sim: ChainSim; bridge: Mut
   const waterRef = useRef<THREE.InstancedMesh>(null);
   const rodRef = useRef<THREE.InstancedMesh>(null);
   const waterGeom = useMemo(waterGeometry, []);
-  const edges = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(HALF * 2, HALF * 2, HALF * 2)), []);
+  const edges = useMemo(() => {
+    const box = new THREE.BoxGeometry(HALF * 2, HALF * 2, HALF * 2);
+    const g = new THREE.EdgesGeometry(box);
+    box.dispose();
+    return g;
+  }, []);
+  // Geometries passed as props are not freed by react-three-fiber on unmount.
+  useEffect(() => () => { waterGeom.dispose(); edges.dispose(); }, [waterGeom, edges]);
 
   const scratch = useMemo(() => ({
     m: new THREE.Matrix4(), p: new THREE.Vector3(), q: new THREE.Quaternion(), s: new THREE.Vector3(),

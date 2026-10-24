@@ -112,8 +112,8 @@ export interface AtomsControls {
   rods: number; water: boolean; delayed: boolean; plutonium: boolean;
 }
 
-export function AtomsPanel({ c, set, onFire, onReset }: {
-  c: AtomsControls; set: (patch: Partial<AtomsControls>) => void; onFire: () => void; onReset: () => void;
+export function AtomsPanel({ c, set, onFire, onSteady, onReset }: {
+  c: AtomsControls; set: (patch: Partial<AtomsControls>) => void; onFire: () => void; onSteady: () => void; onReset: () => void;
 }) {
   return (
     <>
@@ -123,6 +123,10 @@ export function AtomsPanel({ c, set, onFire, onReset }: {
         <Button primary onClick={onFire} ariaLabel="Fire a neutron (N)">Fire a neutron</Button>
         <Button onClick={onReset} ariaLabel="Reset atoms"><Icon name="reset" size={14} />Reset atoms</Button>
       </div>
+      <div className="rx-btns">
+        <Button onClick={onSteady} ariaLabel="Start a steady reaction">Start a steady reaction</Button>
+      </div>
+      <p className="rx-p muted small">Sets the rods about a third of the way in and fires a few neutrons. The gauge should settle near 1.</p>
       <p className="rx-p muted small">Or click the atoms, or press <span className="rx-key">N</span>.</p>
 
       <div className="rx-sec">

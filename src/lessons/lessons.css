@@ -21,6 +21,15 @@
 @media (max-width: 900px) {
   .lesson-card { top: auto; bottom: 96px; left: 16px; right: 16px; width: auto; max-height: 42vh; }
 }
+/* An inside view (full-screen, z 30) is open: dock the card compact at the bottom-left so it
+   does not cover the view's meter at the top-left (e.g. the reactor's k meter in lesson 8). */
+.lesson-card.is-inside {
+  top: auto; right: auto; bottom: 16px; left: 16px;
+  width: 340px; max-width: calc(100vw - 32px); max-height: 42vh;
+  z-index: 45; gap: 6px; padding: 12px 14px;
+}
+.lesson-card.is-inside .lesson-title { font-size: var(--fs-md); }
+.lesson-card.is-inside .lesson-text { font-size: var(--fs-sm); }
 .lesson-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .lesson-x {
   width: 24px; height: 24px; border-radius: 999px; border: none; background: transparent; color: var(--ink-2);

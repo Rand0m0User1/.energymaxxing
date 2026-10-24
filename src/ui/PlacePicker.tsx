@@ -128,7 +128,7 @@ function PickerModal() {
   };
 
   return (
-    <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) close(false); }}>
+    <div className="modal-backdrop picker-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) close(false); }}>
       <div className="panel panel-pad modal" role="dialog" aria-modal="true" aria-labelledby="place-picker-title" tabIndex={-1} ref={dialogRef}>
         <div className="modal-head">
           <h2 id="place-picker-title">Move the city</h2>

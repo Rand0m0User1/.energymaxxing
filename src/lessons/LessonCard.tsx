@@ -10,9 +10,13 @@ import './lessons.css';
 export default function LessonCard() {
   const r = useLessonRunner();
   const setScreen = useApp((s) => s.setScreen);
+  // With an inside view open (full-screen, z 30) the card docks compact at the bottom-left,
+  // so it does not cover the view's meter at the top-left.
+  const insideOpen = useApp((s) => s.inside != null);
   const { lesson, step, stepIndex, finished } = r;
   if (!lesson) return null;
   const total = lesson.steps.length;
+  const cardClass = `panel panel-pad lesson-card${insideOpen ? ' is-inside' : ''}`;
 
   const header = (
     <div className="lesson-head">
@@ -35,7 +39,7 @@ export default function LessonCard() {
 
   if (finished || !step) {
     return (
-      <section className="panel panel-pad lesson-card" aria-label={`${lesson.title}, finished`}>
+      <section className={cardClass} aria-label={`${lesson.title}, finished`}>
         {header}
         <h2 className="lesson-title">{lesson.title}</h2>
         {dots}
@@ -62,7 +66,7 @@ export default function LessonCard() {
   const ahaOnAfter = step.aha === 'after' || (step.aha === true && !!step.after);
 
   return (
-    <section className="panel panel-pad lesson-card" aria-label={`${lesson.title}, step ${stepIndex + 1} of ${total}`}>
+    <section className={cardClass} aria-label={`${lesson.title}, step ${stepIndex + 1} of ${total}`}>
       {header}
       <h2 className="lesson-title">{lesson.title}</h2>
       {dots}

@@ -45,16 +45,19 @@ export const DEMO_SCRIPT: DemoStep[] = [
     say: 'Same city, same equipment. The lights fail. It is the length of the night.',
     run: () => {
       closeAll();
-      scene({ place: 'helsinki', chart: 'week', speed: 'day', playing: true, camera: 'city' });
+      // Self-contained: the Abu Dhabi equipment, moved to Helsinki's hardest week.
+      scene({ preset: 'abuDhabi', place: 'helsinki', chart: 'week', speed: 'day', playing: true, camera: 'city' });
     },
   },
   {
-    title: 'Add a small reactor',
-    say: `Add ${n('firmFissionGW')} GW of always-on power. Lights come back, and the overbuild drops into the band with firm power.`,
+    title: 'Add a reactor',
+    say: `Add a ${n('firmFissionGW')} GW reactor, a bit more than the city uses on an average winter day. The battery covers the evening peak, and the lights come back on all winter.`,
     run: () => {
       closeAll();
-      S().setPlant('fission', { on: true, gw: fv('firmFissionGW') });
-      S().setChartRange('week');
+      scene({
+        preset: 'abuDhabi', place: 'helsinki', plants: { fission: { on: true, gw: fv('firmFissionGW') } },
+        chart: 'week', speed: 'day', playing: true,
+      });
       S().flyTo('reactor');
     },
   },
@@ -114,7 +117,11 @@ export const DEMO_SCRIPT: DemoStep[] = [
     run: () => {
       closeAll();
       S().setScreen('lab');
-      scene({ preset: 'firmMix', place: 'helsinki', chart: 'week', speed: 'day', playing: true, camera: 'city' });
+      // Less solar and battery than Abu Dhabi, plus a reactor sized for the winter: lights on nearly all year.
+      scene({
+        preset: 'firmMix', place: 'helsinki', plants: { fission: { on: true, gw: fv('firmFissionGW') } },
+        chart: 'week', speed: 'day', playing: true, camera: 'city',
+      });
     },
   },
 ];

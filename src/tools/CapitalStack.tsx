@@ -62,10 +62,10 @@ export default function CapitalStack() {
   const price = reactorPricePerKW(path, custom, n);
   return (
     <Section title="Who pays? The capital stack">
-      <p className="tool-lead">Who pays for the first ones decides who wins.</p>
-      <p className="tool-p">
+      <div className="tool-lead">Who pays for the first ones decides who wins.</div>
+      <div className="tool-p">
         Each block is money for reactor {n}, stacked by who puts it in. Block height shows dollars. Risky money sits on top and costs the most.
-      </p>
+      </div>
       <div className="tool-row between small">
         <span>How many reactors built</span>
         <b className="num">{Math.min(pads, built)}</b>

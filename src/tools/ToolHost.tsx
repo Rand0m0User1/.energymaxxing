@@ -1,5 +1,6 @@
 // Hosts the special tools panels (SPEC §2.8): Reactor Row, Battery Factory, Industry Quarter, Beyond Earth.
 // A large floating panel on the left so the matching 3D buildings stay visible on the right.
+// During a lesson the LessonCard holds the top-left corner, so the panel docks on the right instead.
 import { useEffect } from 'react';
 import { useApp } from '../store';
 import { Icon, IconButton } from '../ui/kit';
@@ -21,6 +22,7 @@ export default function ToolHost() {
   const tool = useApp((s) => s.tool);
   const openTool = useApp((s) => s.openTool);
   const flyTo = useApp((s) => s.flyTo);
+  const inLesson = useApp((s) => s.screen === 'tour' && s.lesson != null);
 
   useEffect(() => {
     if (!tool) return;
@@ -32,7 +34,7 @@ export default function ToolHost() {
   const info = TOOL_INFO[tool];
 
   return (
-    <div className="panel tool-panel" role="dialog" aria-label={info.title}>
+    <div className={inLesson ? 'panel tool-panel in-lesson' : 'panel tool-panel'} role="dialog" aria-label={info.title}>
       <div className="tool-head">
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2>{info.title}</h2>

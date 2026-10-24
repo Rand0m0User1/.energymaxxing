@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { useApp } from '../../store';
 import { Button, Panel } from '../../ui/kit';
 import { fv } from '../../data/facts';
-import { ChainSim } from './chainSim';
+import { ChainSim, STEADY_RODS } from './chainSim';
 import { LEVELS, PAL, type CoreState } from './shared';
 import PlantScene from './PlantScene';
 import CoreScene from './CoreScene';
@@ -133,6 +133,13 @@ export default function ReactorInside() {
   const bridge = useRef<Bridge>({});
   const fire = useCallback(() => sim.fireRandom(), [sim]);
   const resetAtoms = useCallback(() => sim.reset(), [sim]);
+  // Rods to the steady setting, water in, then a small burst of neutrons: k settles near 1.
+  const startSteady = useCallback(() => {
+    sim.params.rods = STEADY_RODS;
+    sim.params.water = true;
+    setAtoms((a) => ({ ...a, rods: STEADY_RODS, water: true }));
+    sim.fireBurst(6);
+  }, [sim]);
 
   // First visit to level 5: start with a couple of neutrons so something happens.
   useEffect(() => {
@@ -143,11 +150,12 @@ export default function ReactorInside() {
     return () => window.clearTimeout(id);
   }, [level, sim]);
 
-  // N fires a neutron on level 5 (ignored while typing).
+  // N fires a neutron on level 5 only (ignored while typing and on key repeat).
   useEffect(() => {
+    if (level !== 5) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'n' && e.key !== 'N') return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if (useApp.getState().insideLevel !== 5) return;
@@ -155,7 +163,7 @@ export default function ReactorInside() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [sim]);
+  }, [sim, level]);
 
   const go = useCallback((n: number) => setInsideLevel(Math.min(5, Math.max(1, n))), [setInsideLevel]);
 
@@ -258,7 +266,7 @@ export default function ReactorInside() {
             {level === 4 && (
               <PelletPanel haleu={haleu} setHaleu={onHaleu} share={share} setShare={setShare} greenCount={greenCount} total={URANIUM_ATOMS} />
             )}
-            {level === 5 && <AtomsPanel c={atoms} set={setAtomsPatch} onFire={fire} onReset={resetAtoms} />}
+            {level === 5 && <AtomsPanel c={atoms} set={setAtomsPatch} onFire={fire} onSteady={startSteady} onReset={resetAtoms} />}
           </div>
 
           <MicroreactorCard />

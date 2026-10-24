@@ -63,16 +63,17 @@ export function coreK(insertion: number): number {
 export interface CoreState { target: number; shown: number; power: number }
 
 export type Zone = 'shrinking' | 'steady' | 'growing';
-export function zoneOf(k: number): Zone {
-  if (k < 0.97) return 'shrinking';
-  if (k > 1.03) return 'growing';
+/** band: how far from 1 still counts as steady. The atoms model is noisier, so it uses a wider band. */
+export function zoneOf(k: number, band = 0.03): Zone {
+  if (k < 1 - band) return 'shrinking';
+  if (k > 1 + band) return 'growing';
   return 'steady';
 }
 
 const ZONE_COLOR: Record<Zone, string> = { shrinking: '#7fa3c0', steady: '#3ba272', growing: '#d29a5e' };
 
 /** Half-circle gauge from 0 to 2 with a needle. Plain SVG. */
-export function KGauge({ k, active = true }: { k: number; active?: boolean }) {
+export function KGauge({ k, active = true, band = 0.03 }: { k: number; active?: boolean; band?: number }) {
   const W = 240, H = 120, cx = W / 2, cy = 110, R = 92;
   const kk = Math.max(0, Math.min(2, isFinite(k) ? k : 0));
   const ang = (v: number) => Math.PI * (1 - v / 2); // 0 -> left, 2 -> right
@@ -85,9 +86,9 @@ export function KGauge({ k, active = true }: { k: number; active?: boolean }) {
   const ticks = [0, 0.5, 1, 1.5, 2];
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={`New splits caused by each split: ${kk.toFixed(2)}`}>
-      {arc(0, 0.97, ZONE_COLOR.shrinking)}
-      {arc(0.97, 1.03, ZONE_COLOR.steady)}
-      {arc(1.03, 2, ZONE_COLOR.growing)}
+      {arc(0, 1 - band, ZONE_COLOR.shrinking)}
+      {arc(1 - band, 1 + band, ZONE_COLOR.steady)}
+      {arc(1 + band, 2, ZONE_COLOR.growing)}
       {ticks.map((t) => {
         const [x1, y1] = pt(t, R - 8), [x2, y2] = pt(t, R - 14);
         const [tx, ty] = pt(t, R - 26);

@@ -1,5 +1,6 @@
 // PhET-style "energy chunks": small matte spheres that travel along the power lines.
-// Constant speed; the number alive is proportional to the power flowing now. One InstancedMesh, updated via refs.
+// Constant speed; the number alive is proportional to the power flowing now (up to a cap per line, so the chunks
+// stay at least MIN_SPACING apart and read as separate pieces). One InstancedMesh, updated via refs.
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
@@ -14,8 +15,10 @@ import { districtServed } from './districtState';
 const MAX = 700;
 const SPEED = 14; // world units per second
 /** Visual tuning: particles spawned per second for each GW flowing. Not a physical number. */
-const RATE_PER_GW = 34;
-const RADIUS = 0.65;
+const RATE_PER_GW = 2.4;
+/** Minimum gap between chunks on one line, world units. Caps the spawn rate at SPEED / MIN_SPACING. */
+const MIN_SPACING = 3;
+const RADIUS = 0.55;
 
 interface Stream { source: SourceId; color: THREE.Color; trunk: Route; branches: boolean }
 
@@ -46,6 +49,8 @@ export default function EnergyParticles() {
     lift: new Float32Array(MAX),
     free: Array.from({ length: MAX }, (_, i) => MAX - 1 - i),
     acc: new Float32Array(16),
+    /** Particles alive per stream (for the per-line cap). */
+    count: new Int32Array(16),
     weights: new Float32Array(CITY_DISTRICTS.length),
     tmp: new THREE.Vector3(),
   }), []);
@@ -107,17 +112,22 @@ export default function EnergyParticles() {
         sim.acc[k] = 0;
         continue;
       }
-      sim.acc[k] += gw * RATE_PER_GW * rateScale * dt;
+      // Density follows GW, but never closer than MIN_SPACING along the line.
+      const rate = Math.min(gw * RATE_PER_GW, speed / MIN_SPACING) * rateScale;
+      const cap = Math.max(1, Math.floor((st.trunk.len + (st.branches ? 30 : 0)) / MIN_SPACING));
+      sim.acc[k] += rate * dt;
       let guard = 0;
-      while (sim.acc[k] >= 1 && guard++ < 8) {
+      while (sim.acc[k] >= 1 && guard++ < 4) {
         sim.acc[k] -= 1;
-        if (alive >= budget || sim.free.length === 0) continue;
+        if (alive >= budget || sim.free.length === 0 || sim.count[k] >= cap) continue;
         const slot = sim.free.pop()!;
         alive++;
+        sim.count[k]++;
         sim.active[slot] = 1;
         sim.stream[slot] = k;
-        sim.s[slot] = 0;
-        sim.lift[slot] = (Math.random() - 0.5) * 0.5;
+        // Start where it would be had it spawned at the exact moment, so spacing stays even between frames.
+        sim.s[slot] = Math.min(speed * (sim.acc[k] / Math.max(rate, 1e-6)), 1.5);
+        sim.lift[slot] = (Math.random() - 0.5) * 0.3;
         let b = -1;
         let len = st.trunk.len;
         if (st.branches && wsum > 0) {
@@ -138,7 +148,7 @@ export default function EnergyParticles() {
           colorsDirty = true;
         }
       }
-      if (sim.acc[k] > 4) sim.acc[k] = 4;
+      if (sim.acc[k] > 1) sim.acc[k] = 1;
     }
 
     // move and write matrices
@@ -155,6 +165,8 @@ export default function EnergyParticles() {
       if (sim.s[n] >= sim.len[n]) {
         sim.active[n] = 0;
         sim.free.push(n);
+        const sk = sim.stream[n];
+        if (sim.count[sk] > 0) sim.count[sk]--;
         arr[o] = 0; arr[o + 5] = 0; arr[o + 10] = 0;
         continue;
       }

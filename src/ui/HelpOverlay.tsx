@@ -28,7 +28,7 @@ function Help() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { ref.current?.focus(); }, []);
   return (
-    <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) close(false); }}>
+    <div className="modal-backdrop help-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) close(false); }}>
       <div className="panel panel-pad modal" style={{ width: 'min(760px, calc(100vw - 32px))' }} role="dialog" aria-modal="true"
         aria-labelledby="help-title" tabIndex={-1} ref={ref}>
         <div className="modal-head">

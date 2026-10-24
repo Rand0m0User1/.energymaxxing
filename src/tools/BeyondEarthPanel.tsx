@@ -10,6 +10,9 @@ import { OFFWORLD_PLACES, type Body, type PlaceId } from '../types';
 import { hours, kg, launchCostPerKg, money, offworldCase, offworldMasses, type OffworldCase } from './model';
 import { KV, LabeledSwitch, Section } from './parts';
 
+/** Top of the fission slider in the plant panel (PlantCard MAX_GW.fission). */
+const REACTOR_MAX_GW = 3;
+
 const PRESET_FOR: Record<Body, PresetId | null> = { earth: null, orbit: 'orbit', moon: 'moonBase', mars: 'marsBase' };
 
 function goPlace(p: PlaceId) {
@@ -90,16 +93,16 @@ function Comparison({ c }: { c: OffworldCase }) {
         <span><span className="dot" style={{ background: SOURCE_COLORS.solar, marginRight: 4 }} />Solar panels {kg(m.solarKg)}</span>
         <span><span className="dot" style={{ background: SOURCE_COLORS.fission, marginRight: 4 }} />Reactor {kg(m.reactorKg)}</span>
       </div>
-      <p className="tool-p">
+      <div className="tool-p">
         To ride through the dark you need {Math.round(c.darkH).toLocaleString('en-US')} kWh of batteries for every kW. At <Fact k="liIonWhPerKg" unit /> that
         is {kg(m.batteryKg)}.
         {c.place === 'lunarEquator' && <> This matches our paper&rsquo;s figure of <Fact k="lunarNightBatteryKg" unit />.</>}
         {' '}The panels must also fill the batteries while the sun is up: about {m.arrayKW.toLocaleString('en-US', { maximumFractionDigits: 1 })} kW of panels
         at <Fact k="beSolarWPerKg" unit />.
-      </p>
-      <p className="tool-p">
+      </div>
+      <div className="tool-p">
         A small reactor runs day and night. NASA&rsquo;s target is <Fact k="fspTargetKW" unit /> in under <Fact k="fspTargetTonnes" unit />, about {kg(m.reactorKg)} per kW.
-      </p>
+      </div>
       <div className="tool-card">
         <KV k="Launch cost per kg">{money(perKg)}</KV>
         <KV k="Solar + batteries, launch cost per kW">{money(m.solarBatteryKg * perKg)}</KV>
@@ -109,11 +112,11 @@ function Comparison({ c }: { c: OffworldCase }) {
           {c.surface && <> Landing on the Moon or Mars costs about <Fact k="surfaceDeliveryMultiplier" format={(v) => `${v} times`} /> more.</>}
         </div>
       </div>
-      <p className="tool-lead">
+      <div className="tool-lead">
         {winner === 'reactor'
           ? `Here the reactor is about ${ratio.toLocaleString('en-US', { maximumFractionDigits: 1 })} times lighter.`
           : `Here solar and batteries are about ${ratio.toLocaleString('en-US', { maximumFractionDigits: 1 })} times lighter.`}
-      </p>
+      </div>
       <RealTerm>specific mass (kg per kW)</RealTerm>
     </Section>
   );
@@ -127,6 +130,15 @@ export default function BeyondEarthPanel() {
   const lightsOn = useApp((s) => s.result.totals.lightsOnPct);
   const setInput = useApp((s) => s.setInput);
   const setPlant = useApp((s) => s.setPlant);
+  // Turning the reactor on: size it to cover the base's peak demand (the default 0.6 GW cannot carry a
+  // city-sized base through a 350-hour night), but never shrink a size the user already chose.
+  const toggleReactor = (on: boolean) => {
+    if (!on) { setPlant('fission', { on: false }); return; }
+    const s = useApp.getState();
+    const peak = s.result.totals.peakDemandGW;
+    const fit = isFinite(peak) && peak > 0 ? Math.min(REACTOR_MAX_GW, Math.ceil(peak * 10) / 10 + 0.1) : s.input.plants.fission.gw;
+    setPlant('fission', { on: true, gw: Math.max(s.input.plants.fission.gw, fit) });
+  };
   const addWeatherEvent = useApp((s) => s.addWeatherEvent);
 
   const info = PLACES[place];
@@ -137,7 +149,7 @@ export default function BeyondEarthPanel() {
   return (
     <>
       <Section>
-        <p className="tool-lead">Off Earth, every kilogram has to be launched. So the question becomes: what is lightest?</p>
+        <div className="tool-lead">Off Earth, every kilogram has to be launched. So the question becomes: what is lightest?</div>
         <div className="place-btns">
           {OFFWORLD_PLACES.map((p) => (
             <Button key={p} active={p === place} onClick={() => goPlace(p)}>{PLACES[p].short}</Button>
@@ -148,16 +160,19 @@ export default function BeyondEarthPanel() {
 
       {!c ? (
         <Section>
-          <p className="tool-p">The city is on Earth right now ({info.name}). Pick a place above to move the base off Earth.</p>
+          <div className="tool-p">The city is on Earth right now ({info.name}). Pick a place above to move the base off Earth.</div>
         </Section>
       ) : (
         <>
           <Section title={info.name}>
-            <p className="tool-p">{info.darkness}</p>
+            <div className="tool-p">{info.darkness}</div>
             <KV k="Lights on in this run (share of hours fully supplied)">
               {isFinite(lightsOn) ? `${lightsOn.toLocaleString('en-US', { maximumFractionDigits: 1 })}%` : '—'}
             </KV>
-            <LabeledSwitch checked={fissionOn} onChange={(v) => setPlant('fission', { on: v })} label="Add a small reactor to the base">
+            <div className="xsmall faint">
+              The base uses the same engine as the city, scaled to the city&rsquo;s size, so compare the per-kW numbers below.
+            </div>
+            <LabeledSwitch checked={fissionOn} onChange={toggleReactor} label="Add a small reactor to the base">
               Add a small reactor to the base
             </LabeledSwitch>
             {place === 'lunarSouthPole' && (
@@ -170,10 +185,10 @@ export default function BeyondEarthPanel() {
                 <LabeledSwitch checked={storm} onChange={(v) => addWeatherEvent(v ? 'dustStorm' : 'clear')} label="Dust storm">
                   Dust storm: sunlight falls to <Fact k="marsDustStormFactor" percent digits={0} /> for <Fact k="marsDustStormSols" unit />
                 </LabeledSwitch>
-                <p className="tool-p">
+                <div className="tool-p">
                   Dust also settles on panels and slowly cuts their output, so someone has to clean them. NASA&rsquo;s InSight lander ran out of power
                   partly because of dust <Cite k="beInsightEndYear" />.
-                </p>
+                </div>
               </>
             )}
           </Section>
@@ -191,9 +206,9 @@ export default function BeyondEarthPanel() {
         <RealTerm>fission surface power (FSP)</RealTerm>
       </Section>
 
-      <p className="tool-aha">
+      <div className="tool-aha">
         Off Earth, cost turns into launch mass. Where the night is long, a small reactor wins; where the sun almost never sets, solar wins.
-      </p>
+      </div>
       <div className="xsmall faint">Panel mass per kW and the longest dark spells at the pole and on Mars are model assumptions. Real designs vary.</div>
     </>
   );

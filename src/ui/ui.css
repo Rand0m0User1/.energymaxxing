@@ -190,7 +190,7 @@
 /* Sources drawer */
 .drawer {
   position: absolute; top: var(--ui-gap); right: var(--ui-gap); bottom: var(--ui-gap); width: min(430px, calc(100vw - 24px));
-  display: flex; flex-direction: column; z-index: 45; background: var(--panel-solid); overflow: hidden;
+  display: flex; flex-direction: column; z-index: 84; background: var(--panel-solid); overflow: hidden;
 }
 .drawer-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .drawer-head h2 { margin: 0; font-size: var(--fs-lg); }
@@ -208,3 +208,14 @@
 .fact-row.focus { background: var(--accent-soft); }
 .status-pill { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--ink-2); }
 .status-pill.assumption, .status-pill.verify { border-style: dashed; }
+
+/* Top layer: these sit above the inside views (30), lesson card (45), base modals (50) and presenter strip (60). */
+.overlay > .modal-backdrop.picker-backdrop { z-index: 86; }
+.overlay > .modal-backdrop.help-backdrop { z-index: 90; }
+
+/* Plant panel in lessons: only a few cards, so shrink to fit them. */
+@media (min-width: 900px) {
+  .plant-panel.fit { bottom: auto; max-height: calc(100vh - (var(--ui-gap) * 4 + var(--topbar-h) + var(--bottombar-h))); }
+  .plant-panel.fit .pp-body { flex: 0 1 auto; }
+}
+.pp-offworld { font-size: var(--fs-xs); color: var(--ink-2); line-height: 1.4; margin-bottom: 8px; padding: 7px 9px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 6px; }

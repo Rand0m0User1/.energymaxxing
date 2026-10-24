@@ -40,7 +40,7 @@ export default function Signs() {
   return (
     <>
       {STATION_IDS.map((id) => (
-        <Html key={id} position={[STATIONS[id].pos[0], LABEL_HEIGHT[id], STATIONS[id].pos[1]]} center zIndexRange={[0, 0]} pointerEvents="none">
+        <Html key={id} position={[STATIONS[id].pos[0], LABEL_HEIGHT[id], STATIONS[id].pos[1]]} center zIndexRange={[10, 0]} pointerEvents="none">
           <div
             ref={(el) => {
               refs.current[id] = el;

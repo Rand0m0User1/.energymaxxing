@@ -15,7 +15,7 @@ export default function FloatingCard() {
   if (!id || hidden) return null;
   const st = STATIONS[id];
   return (
-    <Html key={id} position={[st.pos[0], LABEL_HEIGHT[id], st.pos[1]]} zIndexRange={[0, 0]}>
+    <Html key={id} position={[st.pos[0], LABEL_HEIGHT[id], st.pos[1]]} zIndexRange={[20, 11]}>
       <CardBody id={id} />
     </Html>
   );

@@ -116,8 +116,8 @@ export function NowBar() {
   );
 }
 
-/** A simple cylinder that fills and empties, with "% full" and "hours left at this rate". */
-export function BatteryGauge() {
+/** Battery state at the current step, shared by the full gauge and the compact strip. */
+function useBatteryInfo() {
   const result = useApp((s) => s.result);
   const battery = useApp((s) => s.input.battery);
   const idx = useStep();
@@ -130,12 +130,38 @@ export function BatteryGauge() {
   const eps = 1e-7;
 
   let status: string;
-  if (cap <= 0) status = 'No battery in this setup.';
-  else if (dis > eps) status = soc > eps ? `About ${fmtDuration(safeDiv(soc, dis))} left at this rate.` : 'Empty.';
-  else if (ch > eps) status = 'Charging.';
-  else if (frac > 0.995) status = 'Full, waiting.';
-  else if (frac < 0.005) status = 'Empty.';
-  else status = 'Idle.';
+  let short: string;
+  if (cap <= 0) { status = 'No battery in this setup.'; short = 'Not in this setup'; }
+  else if (dis > eps) {
+    status = soc > eps ? `About ${fmtDuration(safeDiv(soc, dis))} left at this rate.` : 'Empty.';
+    short = soc > eps ? `${fmtDuration(safeDiv(soc, dis))} left` : 'Empty';
+  }
+  else if (ch > eps) { status = 'Charging.'; short = 'Charging'; }
+  else if (frac > 0.995) { status = 'Full, waiting.'; short = 'Full, waiting'; }
+  else if (frac < 0.005) { status = 'Empty.'; short = 'Empty'; }
+  else { status = 'Idle.'; short = 'Idle'; }
+  return { cap, soc, frac, eu, status, short };
+}
+
+/** One-line battery readout for the compact (lesson) strip. */
+export function BatteryCompact() {
+  const { cap, frac, status, short } = useBatteryInfo();
+  return (
+    <div className="dash-mini" aria-label={`Battery ${Math.round(frac * 100)}% full. ${status}`}>
+      <div className="dash-label">Battery</div>
+      {cap > 0 ? (
+        <div className="dash-mini-value num">{Math.round(frac * 100)}% <span className="dash-unit">full</span></div>
+      ) : (
+        <div className="dash-mini-value muted">None</div>
+      )}
+      <div className="faint xsmall dash-mini-sub num">{short}</div>
+    </div>
+  );
+}
+
+/** A simple cylinder that fills and empties, with "% full" and "hours left at this rate". */
+export function BatteryGauge() {
+  const { cap, soc, frac, eu, status } = useBatteryInfo();
 
   // Cylinder geometry (SVG units).
   const top = 8, bottom = 62, rx = 17, ry = 5, cx = 20;

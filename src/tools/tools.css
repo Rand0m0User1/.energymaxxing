@@ -11,6 +11,19 @@
   z-index: 20;
   overflow: hidden;
 }
+/* Nearly solid so the 3D scene behind does not hurt readability (beats the shared translucent .panel). */
+.panel.tool-panel {
+  background: rgba(250, 249, 246, 0.96);
+  background: color-mix(in srgb, var(--panel-solid) 96%, transparent);
+}
+/* In a lesson the LessonCard holds the top-left corner, so dock on the right. */
+.tool-panel.in-lesson {
+  left: auto;
+  right: 16px;
+  top: 64px;
+  width: min(520px, 42vw);
+  z-index: 20;
+}
 .tool-head {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 14px 16px 10px; border-bottom: 1px solid var(--line);

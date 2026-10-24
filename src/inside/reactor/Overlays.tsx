@@ -1,6 +1,6 @@
 // HTML overlays on top of the canvas: the k gauge, counters and short messages.
 // They poll the simulation a few times a second (never per frame) so the big tree does not re-render.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Panel, RealTerm } from '../../ui/kit';
 import { Fact } from '../../ui/Fact';
 import { fv } from '../../data/facts';
@@ -18,16 +18,18 @@ function usePoll<T>(read: () => T, ms = 125): T {
 }
 
 const SAFETY = 'Real reactors are designed so that if they get hotter, the reaction slows down on its own. Control rods also drop in automatically.';
+/** The atoms model is small and noisy, so its gauge counts 0.92 to 1.08 as steady. */
+const ATOMS_BAND = 0.08;
 const HELD = 'A power reactor is held at exactly 1, so the same amount of heat comes out every second.';
 
-function Meter({ k, active, note, safety }: { k: number; active: boolean; note?: string; safety: boolean }) {
-  const z = zoneOf(k);
+function Meter({ k, active, note, safety, band = 0.03 }: { k: number; active: boolean; note?: string; safety: boolean; band?: number }) {
+  const z = zoneOf(k, band);
   return (
     <div className="rx-over rx-meter">
       <Panel>
         <p className="rx-meter-title">New splits caused by each split</p>
         <RealTerm>multiplication factor, k</RealTerm>
-        <KGauge k={k} active={active} />
+        <KGauge k={k} active={active} band={band} />
         <div className="rx-row" style={{ marginTop: 0 }}>
           <span className="rx-meter-zone" style={{ color: active ? zoneColor(z) : 'var(--ink-3)' }}>
             {active ? (z === 'shrinking' ? 'Shrinking' : z === 'steady' ? 'Steady' : 'Growing') : 'No reaction'}
@@ -60,10 +62,14 @@ export function CoreOverlay({ core }: { core: CoreState }) {
 
 /** Level 5 gauge, counters and messages, read from the chain reaction model. */
 export function AtomsOverlay({ sim }: { sim: ChainSim }) {
+  // The needle follows a slow moving average of k so it does not jitter (time constant under 1 s at 8 polls a second).
+  const kShown = useRef<number | null>(null);
   const snap = usePoll(() => {
     const st = sim.stats;
+    const prev = kShown.current;
+    kShown.current = prev == null || !isFinite(prev) ? st.kSmooth : prev + (st.kSmooth - prev) * 0.15;
     return {
-      k: st.kSmooth,
+      k: kShown.current,
       active: st.neutrons > 0 || st.pending > 0,
       hasData: st.hasData,
       splits: st.splits,
@@ -80,7 +86,7 @@ export function AtomsOverlay({ sim }: { sim: ChainSim }) {
   else if (!snap.active && snap.splits > 0) note = 'The chain reaction has stopped. Fire another neutron to start it again.';
   return (
     <>
-      <Meter k={snap.k} active={snap.active || snap.hasData} note={note} safety={snap.growing} />
+      <Meter k={snap.k} active={snap.active || snap.hasData} note={note} safety={snap.growing} band={ATOMS_BAND} />
       {!snap.active && snap.splits === 0 && (
         <div className="rx-over rx-hint"><Panel>Click the atoms or press <span className="rx-key">N</span> to fire a neutron.</Panel></div>
       )}

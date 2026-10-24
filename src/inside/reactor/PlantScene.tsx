@@ -1,5 +1,5 @@
 // Level 1: plant cutaway. Dome, turbine hall, cooling tower, and three loops with moving dots.
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useApp } from '../../store';
@@ -12,6 +12,8 @@ function Loop({ points, color, dotColor, dots, speed, radius = 0.07, dotSize = 0
 }) {
   const curve = useMemo(() => new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(...p)), closed, 'centripetal'), [points, closed]);
   const tube = useMemo(() => new THREE.TubeGeometry(curve, 220, radius, 8, closed), [curve, radius, closed]);
+  // The tube geometry is passed in as a prop, so react-three-fiber does not free it. Free it here.
+  useEffect(() => () => tube.dispose(), [tube]);
   const ref = useRef<THREE.InstancedMesh>(null);
   const t = useRef(0);
   const m = useMemo(() => new THREE.Matrix4(), []);
@@ -83,6 +85,7 @@ function CoolingTower() {
     }
     return new THREE.LatheGeometry(pts, 48);
   }, []);
+  useEffect(() => () => geom.dispose(), [geom]);
   return (
     <mesh geometry={geom} position={[12.5, 0, -5]}>
       <meshStandardMaterial color={PAL.concrete} roughness={0.95} metalness={0} side={THREE.DoubleSide} />

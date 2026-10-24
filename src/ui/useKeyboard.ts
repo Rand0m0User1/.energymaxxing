@@ -38,11 +38,14 @@ export function useKeyboard() {
       if (isTyping(e.target, e.key)) return;
       const s = useApp.getState();
       const key = e.key;
+      // N belongs to the reactor view and Page Up / Page Down to the presenter overlay; never handle them here.
+      if (key === 'n' || key === 'N' || key === 'PageUp' || key === 'PageDown') return;
 
       if (key === 'Escape') {
-        if (s.placePickerOpen) s.setPlacePickerOpen(false);
+        // Top layer first (help, place picker, sources), then the inside view, then the tool.
+        if (s.helpOpen) s.setHelpOpen(false);
+        else if (s.placePickerOpen) s.setPlacePickerOpen(false);
         else if (s.sourcesOpen) s.closeSources();
-        else if (s.helpOpen) s.setHelpOpen(false);
         else if (s.inside) s.closeInside();
         else if (s.tool && !(s.screen === 'beyond' && s.tool === 'beyond')) s.openTool(null);
         else if (s.selectedStation) s.selectStation(null);
@@ -69,6 +72,8 @@ export function useKeyboard() {
       if (e.repeat) return;
 
       if (/^[0-9]$/.test(key)) {
+        // Jumping the island camera behind a full-screen inside view would only confuse; ignore it there.
+        if (s.inside) return;
         const n = parseInt(key, 10);
         const id = STATION_IDS[(n + 9) % 10];
         if (id) s.flyTo(id);
@@ -77,6 +82,7 @@ export function useKeyboard() {
       }
       switch (key) {
         case 'm': case 'M':
+          if (s.inside) return;
           s.setCameraMode(s.cameraMode === 'map' ? 'orbit' : 'map');
           break;
         case 'e': case 'E': {
@@ -96,7 +102,7 @@ export function useKeyboard() {
           s.setPresenter(!s.presenter);
           break;
         case 's': case 'S':
-          // S is also "walk back" for the camera rig; only take a screenshot when not walking.
+          // S is also "walk back" for the camera rig; it does nothing else in walk mode.
           if (s.cameraMode === 'walk') return;
           takeScreenshot();
           break;

@@ -9,6 +9,7 @@ import SettingsPanel from './SettingsPanel';
 import { UIIcon } from './icons';
 import { useNarrow } from './live';
 import { SOURCE_IDS, type SourceId, type StationId } from '../types';
+import { PLACES } from '../data/places';
 import './ui.css';
 
 type Tab = 'plants' | 'demand' | 'settings';
@@ -32,11 +33,17 @@ function PlantCardShell({ source }: { source: SourceId }) {
   );
 }
 
-function PlantsTab({ showOverbuild }: { showOverbuild: boolean }) {
+function PlantsTab({ showOverbuild, anySource }: { showOverbuild: boolean; anySource: boolean }) {
   const buildLikeHandmer = useApp((s) => s.buildLikeHandmer);
+  const offEarth = useApp((s) => PLACES[s.input.place]?.body !== 'earth');
   return (
     <div>
-      <div className="pp-units">GW is how fast power flows. GWh is how much energy is stored.</div>
+      {offEarth && (
+        <div className="pp-offworld">
+          This base runs the same engine as the city, at the same size, so you can compare. The Beyond Earth panel shows the numbers per kilowatt.
+        </div>
+      )}
+      {anySource && <div className="pp-units">GW is how fast power flows. GWh is how much energy is stored.</div>}
       {SOURCE_IDS.map((s) => <PlantCardShell key={s} source={s} />)}
       {showOverbuild && (
         <div className="handmer">
@@ -51,7 +58,6 @@ function PlantsTab({ showOverbuild }: { showOverbuild: boolean }) {
 }
 
 export default function PlantPanel() {
-  const screen = useApp((s) => s.screen);
   const vis = useApp((s) => s.visibleControls);
   const selectedStation = useApp((s) => s.selectedStation);
   const narrow = useNarrow();
@@ -64,12 +70,14 @@ export default function PlantPanel() {
   const anySource = SOURCE_IDS.some((s) => has(s));
   const showOverbuild = has('overbuild');
   const showDemand = has('demand') || has('scenario') || has('flexLoad');
-  const showSettings = screen !== 'tour' || all;
+  // In lessons the Settings tab appears only when the step asks for the cost controls.
+  const showSettings = all || has('advancedCosts');
   const tabs: Tab[] = [];
   if (anySource || showOverbuild) tabs.push('plants');
   if (showDemand) tabs.push('demand');
   if (showSettings) tabs.push('settings');
-  const showTabRow = has('tabs') || all;
+  // Show every tab that has something visible in it; tabs with no visible controls are left out.
+  const showTabRow = has('tabs') || all || tabs.length > 1;
   const active: Tab | undefined = tabs.includes(tab) ? tab : tabs[0];
 
   // Clicking a plant in the world brings its card into view.
@@ -88,7 +96,7 @@ export default function PlantPanel() {
   const collapsed = narrow && !sheetOpen;
 
   return (
-    <aside className={`panel plant-panel ${collapsed ? 'collapsed' : ''}`} aria-label="Power plants and city controls">
+    <aside className={`panel plant-panel ${collapsed ? 'collapsed' : ''} ${all ? '' : 'fit'}`} aria-label="Power plants and city controls">
       <div className="pp-head" role={showTabRow && tabs.length > 1 ? 'tablist' : undefined}>
         {(showTabRow ? tabs : [active]).map((t) => (
           <button key={t} className="pp-tab" role={showTabRow && tabs.length > 1 ? 'tab' : undefined}
@@ -103,7 +111,7 @@ export default function PlantPanel() {
         </button>
       </div>
       <div className="pp-body" ref={bodyRef} role={showTabRow && tabs.length > 1 ? 'tabpanel' : undefined}>
-        {active === 'plants' && <PlantsTab showOverbuild={showOverbuild} />}
+        {active === 'plants' && <PlantsTab showOverbuild={showOverbuild} anySource={anySource} />}
         {active === 'demand' && <DemandPanel />}
         {active === 'settings' && <SettingsPanel />}
       </div>

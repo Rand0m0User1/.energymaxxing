@@ -61,7 +61,7 @@ const gigawatt: Lesson = {
         }),
       check: isNoon,
       watch: ['solarNow', 'fissionNow'],
-      after: 'At noon the solar farm makes close to its full size. So does the reactor. On a sunny summer noon they look the same.',
+      after: 'At noon the solar farm is near its best for the whole year: {live:solarNow}. The reactor makes {live:fissionNow}. On a sunny summer noon the gap between them is at its smallest.',
     },
     {
       text: 'Now drag the clock to 10 PM.',
@@ -134,7 +134,7 @@ const night: Lesson = {
       term: 'powerEnergy',
       check: (a) => a.input.battery.on && a.input.battery.gwh <= fv('lessonSmallBatteryGWh') + 0.01,
       watch: ['batteryNow', 'unservedNow'],
-      after: 'Now the battery runs dry before sunrise, and the city goes dark in the small hours. Drag the clock toward 4 AM to see it. To last the night, a battery must hold the whole night\'s energy.',
+      after: 'Now the battery runs dry hours before sunrise, and the city goes dark for the rest of the night. Drag the clock between 10 PM and 4 AM to see it. To last the night, a battery must hold the whole night\'s energy.',
     },
     {
       text: 'The battery is back to full size. Press play and watch a day go by.',
@@ -199,6 +199,12 @@ const abuDhabi: Lesson = {
       text: 'Make a guess. Then we will run the whole year.',
       controls: ['play', 'time', 'dashboard'],
       camera: 'city',
+      // If the viewer skipped the two sizing steps, set the sizes so the reveal stays true.
+      setup: (a) => {
+        if (!a.input.plants.solar.on || !near(a.input.plants.solar.gw, fv('abuDhabiSolarGW'), 0.2)) a.setPlant('solar', { on: true, gw: fv('abuDhabiSolarGW') });
+        const b = S().input.battery;
+        if (!b.on || !near(b.gwh, fv('abuDhabiBatteryGWh'), 1)) S().setBattery({ on: true, gwh: fv('abuDhabiBatteryGWh') });
+      },
       predict: {
         question: 'Over a whole year, how often will the lights stay on?',
         choices: ['Less than half the time', 'Most of the time, with some dark nights', 'Nearly all the time'],
@@ -259,8 +265,9 @@ const north: Lesson = {
       camera: 'solar',
       setup: (a) => {
         a.setPlacePickerOpen(false);
-        a.setTimeOfDay(8);
-        a.setChartRange('day');
+        if (a.input.place !== 'helsinki') a.setPlace('helsinki'); // the viewer may have skipped the move
+        S().setTimeOfDay(8);
+        S().setChartRange('day');
       },
       check: isNoon,
       watch: ['solarNow', 'demandNow'],
@@ -274,7 +281,7 @@ const north: Lesson = {
         return d >= 151 && d <= 212;
       },
       watch: ['date', 'solarNow', 'batteryNow'],
-      after: 'In June, Helsinki barely has a night. The same solar farm and battery would cover the city easily. Summer is easy. Winter is the problem.',
+      after: 'In June, Helsinki barely has a night. The same solar farm and battery keep the lights on almost every hour. Summer is easy. Winter is the problem.',
     },
     {
       text: 'It is not where the sun is strongest that matters, it is how long the darkness lasts.',
@@ -300,10 +307,10 @@ const doldrums: Lesson = {
   title: 'Dark doldrums and firm power',
   question: 1,
   minutes: 3,
-  learn: 'Why cold, dark, windless weeks call for a small layer of always-on power.',
+  learn: 'Why cold, dark, windless weeks call for a layer of always-on power.',
   aha: 'Always-on power is insurance. How much you need depends on how long the dark, calm stretches last.',
   summary:
-    'Dark, windless winter weeks drain any battery. A small layer of always-on power, such as a reactor, geothermal or hydro, covers them with far less total building than solar and batteries alone.',
+    'Dark, windless winter weeks drain any battery. A layer of always-on power, such as a reactor, geothermal or hydro, carries the city through them. Studies of clean grids find it also means far less total building than solar and batteries alone.',
   steps: [
     {
       text: 'This is Berlin in December. The city runs on solar, wind and batteries. Press play and watch the week.',
@@ -355,13 +362,14 @@ const doldrums: Lesson = {
       after: 'Always-on power keeps running when the sun and wind are gone. Lights on: {live:lightsOn}.',
     },
     {
-      text: 'Set the reactor to {f:firmFissionGW:u}.',
+      text: 'Set the reactor to {f:firmFissionGW:u}. That is a bit more than the city uses on an average winter day, so the battery only has to cover the evening peak.',
       controls: ['fission', 'dashboard'],
+      setup: (a) => { if (!hasEvent(a, 'windlessWeek')) a.addWeatherEvent('windlessWeek'); }, // in case it was skipped
       actions: [{ label: 'Set it for me', run: (a) => a.setPlant('fission', { on: true, gw: fv('firmFissionGW') }) }],
       check: (a) => a.input.plants.fission.on && a.input.plants.fission.gw >= fv('firmFissionGW') - 0.05,
-      watch: ['lightsOn', 'overbuild', 'costMid'],
+      watch: ['lightsOn', 'longestBlackout', 'costMid'],
       after:
-        'Installed power is now {live:overbuild} the peak demand. Studies of grids with always-on power land at {f:sepulvedaFirmLow}–{f:sepulvedaFirmHigh} times. Without it, {f:sepulvedaNoFirmLow}–{f:sepulvedaNoFirmHigh} times.',
+        'Lights on: {live:lightsOn}. The windless week is covered. This city still has all its solar, wind and batteries, so installed power is {live:overbuild} the peak demand. Studies of clean grids find that with always-on power you can build much less of the rest: {f:sepulvedaFirmLow}–{f:sepulvedaFirmHigh} times peak demand, against {f:sepulvedaNoFirmLow}–{f:sepulvedaNoFirmHigh} times without it.',
     },
     {
       text: 'Always-on power is insurance. How much you need depends on how long the dark, calm stretches last.',
@@ -397,7 +405,11 @@ const handmer: Lesson = {
     {
       text: 'Make a guess.',
       controls: ['time', 'dashboard'],
-      setup: (a) => a.setTimeOfDay(12),
+      setup: (a) => {
+        // The viewer may have skipped the build step.
+        if (a.input.plants.solar.gw < fv('handmerSolarMultiple') * fv('cityAvgGW') * 0.8) a.buildLikeHandmer();
+        S().setTimeOfDay(12);
+      },
       predict: {
         question: 'It is noon on a summer day. Where does most of that solar power go?',
         choices: ['Into the city', 'Into the battery', 'It is thrown away'],
@@ -417,17 +429,16 @@ const handmer: Lesson = {
       watch: ['costMid', 'wastedPct'],
     },
     {
-      text: 'Give the wasted sun a job. Let factories soak it up, store it as heat, or sell it for {f:surplusPriceTest:usd} per MWh.',
+      text: 'Give the wasted sun a job. Let factories soak it up, or sell it for {f:surplusPriceTest:usd} per MWh.',
       controls: ['flexLoad', 'advancedCosts', 'dashboard'],
       camera: 'industry',
       actions: [
         { label: 'Let industry use it', run: (a) => a.setInput({ industryFlex: true }) },
-        { label: 'Store it as heat', run: (a) => a.setInput({ heatStorage: true }) },
         { label: 'Sell it', run: (a) => a.setInput({ costs: { ...S().input.costs, surplusPrice: fv('surplusPriceTest') } }) },
       ],
-      check: (a) => a.input.industryFlex || a.input.heatStorage || a.input.costs.surplusPrice > 0,
+      check: (a) => a.input.industryFlex || a.input.costs.surplusPrice > 0,
       watch: ['costMid', 'wastedPct'],
-      after: 'Now the extra energy earns its keep. Cost per useful MWh: {live:costMid}. This is Handmer\'s point: wasted sun is not a loss if something can use it while it is there.',
+      after: 'Factories that soak up the extra cut the waste. Selling it pays back part of the panels, so each useful MWh costs less. Cost per useful MWh: {live:costMid}. This is Handmer\'s point: wasted sun is not a loss if something can use it while it is there.',
     },
     {
       text: 'Overbuilding works best where nights are short. Try the same city in Helsinki in December.',
@@ -482,14 +493,14 @@ const beyond: Lesson = {
       actions: [{ label: 'Go to the south pole', run: (a) => a.setPlace('lunarSouthPole') }],
       check: (a) => a.input.place === 'lunarSouthPole',
       watch: ['lightsOn', 'longestBlackout'],
-      after: 'Some peaks near the pole are in sunlight more than {f:lunarPeakLit:pct} of the time. With short nights, solar works again.',
+      after: 'Some peaks near the pole are in sunlight more than {f:lunarPeakLit:pct} of the time. The nights are much shorter, so solar does far better here. Lights on: {live:lightsOn}.',
     },
     {
       text: 'Raise the panels on a tall mast to catch even more sun.',
       actions: [{ label: 'Add a mast', run: (a) => a.setInput({ lunarMast: true }) }],
       check: (a) => a.input.lunarMast,
       watch: ['lightsOn'],
-      after: 'On a mast, panels can be lit more than {f:lunarMastLit:pct} of the time.',
+      after: 'On a mast, panels can be lit more than {f:lunarMastLit:pct} of the time. Lights on: {live:lightsOn}.',
     },
     {
       text: 'Now go to the Mars equator and add a dust storm.',
@@ -509,7 +520,7 @@ const beyond: Lesson = {
       after: 'A dust storm can cut solar to about {f:marsDustStormFactor:pct} for {f:marsDustStormSols:u}. That is another long night.',
     },
     {
-      text: 'Turn on a small reactor.',
+      text: 'Turn on a reactor sized to carry the base on its own.',
       controls: ['fission', 'dashboard'],
       actions: [{ label: 'Turn on a reactor', run: (a) => a.setPlant('fission', { on: true, gw: Math.max(S().input.plants.fission.gw, fv('firmFissionGW')) }) }],
       check: (a) => plantOn(a, 'fission'),
@@ -533,7 +544,7 @@ const reactor: Lesson = {
     'A chain reaction is easy to steer and slows down when the water is gone. The hard part of fission is building: the price falls only when the same design is built again and again, and someone has to pay for the first ones.',
   steps: [
     {
-      text: 'This is the heart of a reactor. A neutron hits a uranium atom. The atom splits, releases energy, and throws out about {f:neutronsPerFission} new neutrons. Fire a neutron (press N) and watch.',
+      text: 'This is the heart of a reactor. A neutron hits a uranium atom. The atom splits, releases energy, and throws out about {f:neutronsPerFission} new neutrons. Press "Fire a neutron" in the panel on the right, or the N key, and watch the splits spread.',
       controls: [],
       camera: 'reactor',
       tool: null,
@@ -542,13 +553,13 @@ const reactor: Lesson = {
       auto: true,
     },
     {
-      text: 'Move the control rods until each split causes exactly one more split. The meter should read k = {f:kSteady:nm}.',
+      text: 'Drag the "Control rods" slider on the right. Rods in soak up neutrons; rods out let more through. Fire a few more neutrons (N) and find the spot where each split causes exactly one more split: the meter at the top-left reads k = {f:kSteady:nm}.',
       term: 'k',
       auto: true,
       after: 'At k = {f:kSteady:nm} the chain reaction holds steady. Below that it dies out. Above it, it grows. Operators keep it right at the line.',
     },
     {
-      text: 'Now remove the water.',
+      text: 'Now turn on the "Remove water" switch on the right, then fire a few more neutrons (N). Watch the meter.',
       term: 'moderator',
       auto: true,
       after: 'Without water, neutrons stay too fast to cause many splits, and the reaction slows down by itself. This is one reason these reactors are stable.',

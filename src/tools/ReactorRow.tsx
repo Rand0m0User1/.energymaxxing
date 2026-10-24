@@ -27,27 +27,27 @@ function PathNote({ path }: { path: ReactorPath }) {
   const custom = useApp((s) => s.tools.customLearningRate);
   if (path === 'us') {
     return (
-      <p className="tool-p">
+      <div className="tool-p">
         In the US, each new reactor cost more than the last: about <Fact k="rrLearnUS" format={(v) => signedPct(-v)} /> per doubling in our model.
         Over half of the rise came from &ldquo;soft&rdquo; costs outside the reactor itself, such as labor supervision <Cite k="rrSoftCostShare" />.
         <RealTerm>cost escalation</RealTerm>
-      </p>
+      </div>
     );
   }
   if (path === 'france') {
     return (
-      <p className="tool-p">
+      <div className="tool-p">
         France built many reactors of a few designs. Even so, real costs rose over time: about <Fact k="rrLearnFrance" format={(v) => signedPct(-v)} /> per doubling in our model.
         <RealTerm>negative learning by doing</RealTerm>
-      </p>
+      </div>
     );
   }
   if (path === 'korea') {
     return (
-      <p className="tool-p">
+      <div className="tool-p">
         South Korea built the same design again and again with the same teams, and costs fell: about <Fact k="rrLearnKorea" format={(v) => signedPct(-v)} /> per doubling in our model.
         <RealTerm>learning rate</RealTerm>
-      </p>
+      </div>
     );
   }
   return (
@@ -167,14 +167,14 @@ export default function ReactorRow() {
   return (
     <>
       <Section>
-        <p className="tool-lead">
+        <div className="tool-lead">
           First-of-a-kind means the first one ever built. It is slow and expensive because everything is new.
           Nth-of-a-kind means the tenth or hundredth copy. If builders get better each time, the price falls.
-        </p>
-        <p className="tool-p">
+        </div>
+        <div className="tool-p">
           Our paper&rsquo;s view: fission is much closer to this than fusion. Fission physics is proven; the hard parts are building and permits.
           Fusion has not yet put power on a grid.
-        </p>
+        </div>
         <RealTerm>first-of-a-kind (FOAK) and nth-of-a-kind (NOAK)</RealTerm>
       </Section>
 
@@ -194,12 +194,12 @@ export default function ReactorRow() {
             {built === 0 ? 'No reactors built yet' : `Built ${built} of ${pads}. Latest: ${dollars(Math.round(prices[built - 1]))} per kW`}
           </span>
         </div>
-        <p className="tool-p">
+        <div className="tool-p">
           {copies == null
             ? `On this path the price never reaches ${dollars(target)} per kW. Each copy costs the same or more.`
             : `On this path it takes about ${copies.toLocaleString('en-US')} copies to reach ${dollars(target)} per kW from the Vogtle price.`}
           {copies != null && copies > pads && ' Learning helps, but a cheaper first reactor matters just as much.'}
-        </p>
+        </div>
         <LabeledSwitch checked={usePrice} onChange={(v) => setTools({ useReactorRowPrice: v })} label="Use this price in the City Lab">
           Use this price in the City Lab
           <div className="xsmall faint num">
@@ -211,9 +211,9 @@ export default function ReactorRow() {
       </Section>
 
       <Section title="What that means for the price of power">
-        <p className="tool-p">
+        <div className="tool-p">
           A cheaper reactor makes cheaper power. Here is the cost of each megawatt-hour over the reactor&rsquo;s life.
-        </p>
+        </div>
         <table className="tool-table">
           <thead>
             <tr><th>Reactor</th><th className="r">Build cost per kW</th><th className="r">Power cost per MWh</th></tr>
@@ -246,23 +246,23 @@ export default function ReactorRow() {
 
       <Section title="Will utilities adopt it?">
         <div className="tool-card">
-          <p className="tool-p" style={{ color: 'var(--ink)' }}>
+          <div className="tool-p" style={{ color: 'var(--ink)' }}>
             Utilities are paid to keep the lights on, not to take risks. Most wait until a design has been built several times before they buy one.
-          </p>
-          <p className="tool-p">
+          </div>
+          <div className="tool-p">
             Data-center buyers move faster. For a 1 GW data center, power costs about <Fact k="dcPowerCostPerYearB" format={(v) => `$${v} billion`} /> a year,
             but the servers cost about <Fact k="dcServerCostB" format={(v) => `$${v} billion`} />. Getting connected soon matters more to them than the price of power.
-          </p>
-          <p className="tool-p">So tech companies are likely to buy the first reactors, and utilities follow once the price is proven.</p>
+          </div>
+          <div className="tool-p">So tech companies are likely to buy the first reactors, and utilities follow once the price is proven.</div>
           <RealTerm>regulated utility (paid a set return on approved spending)</RealTerm>
         </div>
       </Section>
 
       <Section title="And fusion?">
-        <p className="tool-p">
+        <div className="tool-p">
           Fusion has not yet put power on a grid. Our paper&rsquo;s estimate for the first tokamak power plants is <Fact k="lcoeFusionLow" format={(v) => `$${v}`} /> to <Fact k="lcoeFusionHigh" format={(v) => `$${v}`} /> per MWh.
           Fission&rsquo;s problem is building cheaply. Fusion still has to show it works as a power plant first.
-        </p>
+        </div>
         <KV k="Google has agreed to buy power from the first CFS fusion plant">
           <Fact k="googleCfsMW" unit />
         </KV>
@@ -271,9 +271,9 @@ export default function ReactorRow() {
         </KV>
       </Section>
 
-      <p className="tool-aha">
+      <div className="tool-aha">
         Reactors are expensive because they are built one at a time. Build the same one many times and the price falls. Who pays for the first ones decides who wins.
-      </p>
+      </div>
     </>
   );
 }
