@@ -39,9 +39,15 @@ await shot('moon-day', `s.selectStation(null); s.setEnv('moon'); s.setOnly(['sol
 await shot('moon-night', `s.setTimeOfDay(21);`);
 await shot('moon-night-nuclear', `s.setOn('nuclear', true);`);
 await shot('back-to-earth', `s.setEnv('earth');`);
-for (let i = 0; i < 6; i++) await shot(`tour-earth-${i + 1}`, i === 0 ? `s.startTour('earth');` : `s.setTourStep(${i});`);
-for (let i = 0; i < 4; i++) await shot(`tour-moon-${i + 1}`, i === 0 ? `s.startTour('moon');` : `s.setTourStep(${i});`);
-await shot('narrow', `s.endTour();`);
+await shot('battery-lead', `s.setPlace('earth'); s.setSeason('spring'); s.setOnly(['solar', 'battery']); s.setBatteryType('lead'); s.setTimeOfDay(5);`);
+await shot('moon-pole', `s.setPlace('moonPole'); s.setOnly(['solar', 'battery']); s.setTimeOfDay(17);`);
+for (const d of ['batteryFuture', 'nuclear', 'industry']) await shot('demo-' + d, `s.setPlace('earth'); s.openDemo('${d}');`);
+await shot('demo-closed', `s.openDemo(null);`);
+const tours = await page.evaluate(() => null);
+for (const [id, n] of [['earth', 7], ['batteries', 7], ['nuclear', 4], ['industry', 6], ['moon', 6]]) {
+  for (let i = 0; i < n; i++) await shot(`tour-${id}-${i + 1}`, i === 0 ? `s.startTour('${id}');` : `s.setTourStep(${i});`);
+}
+await shot('end', `s.endTour();`);
 
 console.log(`\nERRORS (${errors.length}):`);
 for (const e of [...new Set(errors)]) console.log(' -', e.slice(0, 300));

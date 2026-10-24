@@ -19,10 +19,11 @@ Only these:
 
 | Control | Options |
 |---|---|
-| Place | Earth or Moon (the same city) |
+| Place | Earth, Moon equator or Moon pole (the same city) |
 | Season | Spring, Summer, Fall, Winter (Earth only) |
 | Time of day | 0–24 slider, with play/pause |
-| Power sources | On/off. Earth: Solar, Wind, Batteries, Nuclear, Gas. Moon: Solar, Batteries, Nuclear |
+| Power sources | On/off. Earth: Solar, Wind, Batteries, Nuclear (fission), Gas. Moon: Solar, Batteries, Nuclear (fission) |
+| Battery type | LFP, NMC, sodium-ion or lead-acid, shown with its trade-offs |
 
 Plant sizes are fixed. Skies are clear, so the season and the time of day are the only things that change the sunlight.
 
@@ -34,8 +35,13 @@ Plant sizes are fixed. Skies are clear, so the season and the time of day are th
 
 ## Tours
 
-1. **Day and night (Earth).** Solar works at noon and fails at night. Batteries carry the night in summer, but run out in winter. Nuclear keeps the lights on in every season.
-2. **The Moon.** A Moon day lasts about a month. Batteries last about a day of the two-week night. Nuclear keeps the base lit.
+1. **Solar, night and winter (Earth).** Solar is cheap but stops at night. Batteries carry the night in summer but run out in winter. Nuclear keeps the lights on in every season.
+2. **Batteries.** The four types and their trade-offs. A demo of four improvements: cheaper to build, longer life, long-duration storage, more diverse supply.
+3. **Fission and the nth reactor.** A demo of how reactor cost changes as more reactors of one design get built.
+4. **Cheap power and industry.** A demo with an ammonia plant, an aluminium smelter, a data center and a chip fab, under a power-price slider.
+5. **The Moon and orbit.** The equator's two-week night, the mostly sunlit pole, NASA's fission work, and orbit.
+
+Demos are separate overlays, not part of the city.
 
 ## Model
 

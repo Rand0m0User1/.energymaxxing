@@ -148,3 +148,15 @@ button, input, select { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* Home panel: battery type chooser */
+.hp-batt { display: flex; flex-direction: column; gap: 4px; margin: 2px 0 6px 18px; }
+.hp-batt > .seg { display: flex; width: 100%; }
+.hp-batt > .seg button { flex: 1; padding: 4px 0; }
+.hp-batt-name { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.hp-tag { padding: 1px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.hp-meters { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--ink-2); }
+.hp-meter { display: inline-flex; align-items: center; gap: 3px; }
+.hp-meter span { margin-right: 2px; }
+.hp-meter i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
+.hp-meter i.on { background: var(--ink-2); }

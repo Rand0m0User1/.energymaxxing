@@ -66,17 +66,13 @@ export const LONG_DURATION_GWH = 100;
 export function batterySpec(type: BatteryType, future: FutureBatteries) {
   const b = BATTERIES[type];
   let gwh = b.gwh;
-  let efficiency = b.efficiency;
+  const efficiency = b.efficiency;
   let costPerKWh = b.costPerKWh;
   let lifeYears = b.lifeYears;
   let supply = b.ratings.supply;
   if (future.cost) { costPerKWh *= 0.6; gwh *= 1.6; }
   if (future.life) lifeYears *= 2;
-  if (future.longDuration) {
-    // Long-duration storage holds far more energy but gives back less of it.
-    efficiency = (efficiency * gwh + 0.6 * LONG_DURATION_GWH) / (gwh + LONG_DURATION_GWH);
-    gwh += LONG_DURATION_GWH;
-  }
+  if (future.longDuration) gwh += LONG_DURATION_GWH;
   if (future.supply) supply = 3;
   return { gwh, efficiency, costPerKWh, lifeYears, supply, gw: 2 };
 }

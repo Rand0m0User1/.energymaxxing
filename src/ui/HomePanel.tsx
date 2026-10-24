@@ -1,6 +1,7 @@
 // The one control panel: status, place, season, time and power switches.
-import { useEffect, useRef, useState } from 'react';
-import { POWER_BY_ENV, POWER_STATION, SEASONS, useApp, type PowerId, type Season, type TourId } from '../store';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { POWER_BY_ENV, POWER_STATION, SEASONS, useApp, type PlaceChoice, type PowerId, type Season, type TourId } from '../store';
+import { BATTERIES, BATTERY_TYPES, batterySpec } from '../batteries';
 import { sunPosition } from '../engine/sun';
 import { Icon, IconButton, Segmented, Slider, Switch } from './kit';
 import { DARK_COLOR, POWER_COLOR, POWER_HINT, POWER_LABEL, clock, useSummary } from './power';
@@ -61,8 +62,8 @@ function Header() {
         <button className="btn" aria-expanded={open} onClick={() => setOpen(!open)}>Tours</button>
         {open && (
           <div className="panel tour-menu-list" role="menu">
-            {(Object.keys(TOURS) as TourId[]).map((id) => (
-              <button key={id} role="menuitem" onClick={() => pick(id)}>{TOURS[id].title}</button>
+            {Object.values(TOURS).map((t) => (
+              <button key={t.id} role="menuitem" onClick={() => pick(t.id)}>{t.title}</button>
             ))}
           </div>
         )}
@@ -129,13 +130,13 @@ function Status() {
 }
 
 function Place() {
-  const env = useApp((s) => s.env);
-  const setEnv = useApp((s) => s.setEnv);
+  const place = useApp((s): PlaceChoice => (s.env === 'earth' ? 'earth' : s.moonSite === 'pole' ? 'moonPole' : 'moonEquator'));
+  const setPlace = useApp((s) => s.setPlace);
   return (
-    <section className="home-sec row">
+    <section className="home-sec">
       <span className="label">Place</span>
-      <Segmented label="Place" value={env} onChange={setEnv}
-        options={[{ value: 'earth', label: 'Earth' }, { value: 'moon', label: 'Moon' }]} />
+      <Segmented label="Place" value={place} onChange={setPlace}
+        options={[{ value: 'earth', label: 'Earth' }, { value: 'moonEquator', label: 'Moon equator' }, { value: 'moonPole', label: 'Moon pole' }]} />
     </section>
   );
 }
@@ -191,15 +192,54 @@ function Power() {
     <section className="home-sec">
       <span className="label">Power</span>
       {POWER_BY_ENV[env].map((p) => (
-        <div key={p} className={`power-row ${selected === POWER_STATION[p] ? 'sel' : ''}`}>
-          <span className="dot" style={{ background: POWER_COLOR[p] }} />
-          <button className="power-name" onClick={() => selectStation(POWER_STATION[p])} title="Show in the city">
-            <span>{POWER_LABEL[p]}</span>
-            <span className="xsmall muted">{POWER_HINT[p]}</span>
-          </button>
-          <Switch label={POWER_LABEL[p]} checked={on[p]} onChange={(v) => setOn(p, v)} />
-        </div>
+        <Fragment key={p}>
+          <div className={`power-row ${selected === POWER_STATION[p] ? 'sel' : ''}`}>
+            <span className="dot" style={{ background: POWER_COLOR[p] }} />
+            <button className="power-name" onClick={() => selectStation(POWER_STATION[p])} title="Show in the city">
+              <span>{POWER_LABEL[p]}</span>
+              <span className="xsmall muted">{POWER_HINT[p]}</span>
+            </button>
+            <Switch label={POWER_LABEL[p]} checked={on[p]} onChange={(v) => setOn(p, v)} />
+          </div>
+          {p === 'battery' && on.battery && <BatteryType />}
+        </Fragment>
       ))}
     </section>
+  );
+}
+
+function Meter({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="hp-meter" role="img" aria-label={`${label} ${value} of 3`}>
+      <span>{label}</span>
+      {[1, 2, 3].map((k) => <i key={k} className={k <= value ? 'on' : ''} />)}
+    </span>
+  );
+}
+
+function BatteryType() {
+  const type = useApp((s) => s.batteryType);
+  const setType = useApp((s) => s.setBatteryType);
+  const future = useApp((s) => s.future);
+  const info = BATTERIES[type];
+  const spec = batterySpec(type, future);
+  const improved = future.cost || future.life || future.longDuration || future.supply;
+  return (
+    <div className="hp-batt">
+      <Segmented label="Battery type" value={type} onChange={setType}
+        options={BATTERY_TYPES.map((t) => ({ value: t, label: BATTERIES[t].short }))} />
+      <div className="hp-batt-name small">
+        {info.name}
+        {improved && <span className="hp-tag xsmall">2035 batteries</span>}
+      </div>
+      <div className="xsmall muted">{info.line}</div>
+      <div className="hp-meters xsmall">
+        <Meter label="Cost" value={info.ratings.cost} />
+        <Meter label="Lifespan" value={info.ratings.life} />
+        <Meter label="Safety" value={info.ratings.safety} />
+        <Meter label="Supply" value={spec.supply} />
+      </div>
+      <div className="xsmall num">Holds {Math.round(spec.gwh)} GWh · returns {Math.round(spec.efficiency * 100)}%</div>
+    </div>
   );
 }

@@ -1,12 +1,13 @@
 // Tour card, top right: one step at a time. Next unlocks once the step's action is done.
+// It stays above any demo the step opens.
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../store';
 import { Button, Icon, IconButton } from './kit';
-import { summaryOf } from './power';
-import { TOURS } from './tours';
+import { TOURS, tourSummary } from './tours';
 
 export default function TourCard() {
   const tour = useApp((s) => s.tour);
+  const demo = useApp((s) => s.demo);
   const state = useApp();
   const [passedKey, setPassedKey] = useState<string | null>(null);
 
@@ -21,14 +22,14 @@ export default function TourCard() {
     TOURS[tour.id].steps[tour.step]?.setup?.(useApp.getState());
   }, [tour?.id, tour?.step]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const sum = useMemo(() => summaryOf(state), [state.result, state.env, state.season, state.hourOfYear]); // eslint-disable-line react-hooks/exhaustive-deps
+  const sum = useMemo(() => tourSummary(state), [state.result, state.env, state.season, state.hourOfYear, state.input]); // eslint-disable-line react-hooks/exhaustive-deps
   const ok = !!step && (step.auto || !step.check || step.check(state, sum));
 
   useEffect(() => {
     if (!step || !key || !ok || passed || step.auto) return;
     // Re-check against the live store: the step's setup may have just changed it.
     const live = useApp.getState();
-    if (!step.check || step.check(live, summaryOf(live))) {
+    if (!step.check || step.check(live, tourSummary(live))) {
       setPassedKey(key);
       step.onPass?.(useApp.getState());
     }
@@ -39,7 +40,7 @@ export default function TourCard() {
   const last = tour.step === t.steps.length - 1;
 
   return (
-    <aside className="panel tour-card" aria-label={t.title}>
+    <aside className="panel tour-card" aria-label={t.title} style={demo ? { zIndex: 1000 } : undefined}>
       <div className="tour-head">
         <span className="tour-title">{t.title}</span>
         <span className="tour-dots" aria-label={`Step ${tour.step + 1} of ${t.steps.length}`}>
