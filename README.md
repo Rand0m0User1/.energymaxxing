@@ -1,10 +1,6 @@
-# The Length of the Night
-
-*How much darkness can a city survive?*
+# Energymaxxing
 
 A 3D city you can power with solar, wind, batteries, nuclear and gas. Change the season and the time of day, or move the city to the Moon, and watch when the lights go out.
-
-Team Energymaxxing (Aleksander Kurgan, Brad Wu, Belle Zhou, Munich Limapichat) · Stanford BASES Six Hour Challenge, Energy.
 
 ## Run it
 
