@@ -57,7 +57,7 @@ function Header() {
 
   return (
     <div className="home-head">
-      <div className="home-title">The Length of the Night</div>
+      <div className="home-title">Energymaxxing</div>
       <div className="tour-menu" ref={ref}>
         <button className="btn" aria-expanded={open} onClick={() => setOpen(!open)}>Tours</button>
         {open && (

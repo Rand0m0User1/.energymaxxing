@@ -1,4 +1,4 @@
-# The Length of the Night: spec
+# Energymaxxing: spec
 
 **Team:** Energymaxxing (Aleksander Kurgan, Brad Wu, Belle Zhou, Munich Limapichat)
 **Event:** Stanford BASES Six Hour Challenge, Energy sector, October 24, 2026

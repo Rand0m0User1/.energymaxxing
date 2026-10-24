@@ -1,4 +1,4 @@
-# The Length of the Night
+# Energymaxxing
 
 *How much darkness can a city survive?*
 

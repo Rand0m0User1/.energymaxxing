@@ -8,7 +8,7 @@ export default function TitleScreen() {
   return (
     <div className="title-screen">
       <div className="title-body">
-        <h1>The Length of the Night</h1>
+        <h1>Energymaxxing</h1>
         <p>Solar is cheap. Nights are long. How do we keep the lights on?</p>
         <div className="title-actions">
           <Button primary onClick={() => startTour('earth')}>Take the tour</Button>
@@ -16,7 +16,7 @@ export default function TitleScreen() {
         </div>
       </div>
       <footer className="title-foot xsmall">
-        Energymaxxing · Aleksander Kurgan, Brad Wu, Belle Zhou, Munich Limapichat · Stanford BASES Six Hour Challenge
+        Aleksander Kurgan, Brad Wu, Belle Zhou, Munich Limapichat · Stanford BASES Six Hour Challenge
       </footer>
     </div>
   );
