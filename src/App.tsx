@@ -5,6 +5,7 @@ import WorldCanvas from './world/WorldCanvas';
 import TitleScreen from './ui/TitleScreen';
 import HomePanel from './ui/HomePanel';
 import TourCard from './ui/TourCard';
+import DemoHost from './demos/DemoHost';
 
 // Exposed for the headless check script (scripts/quickshot.mjs).
 if (typeof window !== 'undefined') (window as unknown as { __app: typeof useApp }).__app = useApp;
@@ -27,6 +28,7 @@ function useTicker() {
 export default function App() {
   const screen = useApp((s) => s.screen);
   const tour = useApp((s) => s.tour);
+  const demo = useApp((s) => s.demo);
   useTicker();
 
   return (
@@ -40,6 +42,7 @@ export default function App() {
         ) : (
           <>
             <HomePanel />
+            {demo && <DemoHost />}
             {tour && <TourCard />}
           </>
         )}

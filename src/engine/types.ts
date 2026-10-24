@@ -50,6 +50,8 @@ export interface SimInput {
   flatDemandGW?: number;
   /** Clear sky every day and steady seasonal wind: no random weather. */
   clearSky?: boolean;
+  /** Battery round-trip efficiency override (0..1), set by the battery type. */
+  batteryRoundTrip?: number;
   /** Optional: which day of year an orbit (one-day) sim covers. Default: the place's hardest day. */
   orbitDay?: number;
 }

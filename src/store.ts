@@ -5,11 +5,16 @@ import { simulate } from './engine/simulate';
 import { defaultInput } from './data/presets';
 import { LUNAR_DAY_H } from './engine/sun';
 import type { GenId, PlaceId, StationId } from './types';
+import { batterySpec, NO_FUTURE, type BatteryType, type FutureBatteries } from './batteries';
 
 export type Env = 'earth' | 'moon';
 export type Season = 'spring' | 'summer' | 'fall' | 'winter';
 export type PowerId = 'solar' | 'wind' | 'battery' | 'nuclear' | 'gas';
-export type TourId = 'earth' | 'moon';
+export type TourId = 'earth' | 'batteries' | 'nuclear' | 'industry' | 'moon';
+export type MoonSite = 'equator' | 'pole';
+export type PlaceChoice = 'earth' | 'moonEquator' | 'moonPole';
+/** Educational overlays shown by tours, separate from the city. */
+export type DemoId = 'batteryFuture' | 'nuclear' | 'industry';
 
 export const SEASONS: Season[] = ['spring', 'summer', 'fall', 'winter'];
 export const POWER_BY_ENV: Record<Env, PowerId[]> = {
@@ -25,10 +30,10 @@ export const POWER_STATION: Record<PowerId, StationId> = {
 /** Fixed plant sizes. The city uses about 1 GW on average. */
 export const SIZE = { solar: 5.2, wind: 1.5, nuclear: 1.3, gas: 1.6, batteryGW: 2, batteryGWh: 19 };
 
-const PLACE: Record<Env, PlaceId> = { earth: 'berlin', moon: 'lunarEquator' };
+const placeId = (env: Env, site: MoonSite): PlaceId => (env === 'earth' ? 'berlin' : site === 'pole' ? 'lunarSouthPole' : 'lunarEquator');
 const SEASON_DAY: Record<Season, number> = { spring: 79, summer: 171, fall: 265, winter: 354 };
-/** Moon: start of a lunar day (sunrise) late enough that the battery has settled. */
-const MOON_SUNRISE = 2 * LUNAR_DAY_H;
+/** Moon: start of a lunar day (sunrise) after the battery has settled, in a typical season for the pole. */
+const MOON_SUNRISE = 6 * LUNAR_DAY_H;
 
 /** Hour of the simulated year shown for a time of day (0–24). On the Moon, 0–24 spans one whole lunar day. */
 export function hourFor(env: Env, season: Season, t: number): number {
@@ -38,7 +43,10 @@ export function hourFor(env: Env, season: Season, t: number): number {
 
 const GEN: Record<Exclude<PowerId, 'battery'>, GenId> = { solar: 'solar', wind: 'wind', nuclear: 'fission', gas: 'gas' };
 
-export function buildInput(env: Env, on: Record<PowerId, boolean>): SimInput {
+export interface BuildOptions { moonSite?: MoonSite; batteryType?: BatteryType; future?: FutureBatteries }
+
+export function buildInput(env: Env, on: Record<PowerId, boolean>, opts: BuildOptions = {}): SimInput {
+  const bat = batterySpec(opts.batteryType ?? 'lfp', opts.future ?? NO_FUTURE);
   const base = defaultInput();
   const allowed = POWER_BY_ENV[env];
   const isOn = (p: PowerId) => on[p] && allowed.includes(p);
@@ -49,9 +57,10 @@ export function buildInput(env: Env, on: Record<PowerId, boolean>): SimInput {
   }
   return {
     ...base,
-    place: PLACE[env],
+    place: placeId(env, opts.moonSite ?? 'equator'),
     plants,
-    battery: { on: isOn('battery'), gw: SIZE.batteryGW, gwh: SIZE.batteryGWh, mode: 'auto', schedule: null },
+    battery: { on: isOn('battery'), gw: bat.gw, gwh: bat.gwh, mode: 'auto', schedule: null },
+    batteryRoundTrip: bat.efficiency,
     districts: { ...base.districts, hydrogen: { on: false, mw: 0 } },
     clearSky: true,
     realisticOutages: false,
@@ -67,6 +76,15 @@ export interface AppState {
   setScreen: (s: 'title' | 'explore') => void;
 
   env: Env;
+  moonSite: MoonSite;
+  /** Earth, Moon equator or Moon pole in one call. */
+  setPlace: (p: PlaceChoice) => void;
+  batteryType: BatteryType;
+  setBatteryType: (t: BatteryType) => void;
+  future: FutureBatteries;
+  setFuture: (patch: Partial<FutureBatteries>) => void;
+  demo: DemoId | null;
+  openDemo: (d: DemoId | null) => void;
   season: Season;
   timeOfDay: number;
   on: Record<PowerId, boolean>;
@@ -102,10 +120,14 @@ export interface AppState {
 const prefersReducedMotion = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 export const useApp = create<AppState>((set, get) => {
-  const recompute = (patch: Partial<Pick<AppState, 'env' | 'on'>>) => {
+  const recompute = (patch: Partial<Pick<AppState, 'env' | 'on' | 'moonSite' | 'batteryType' | 'future'>>) => {
     const env = patch.env ?? get().env;
     const on = patch.on ?? get().on;
-    const input = buildInput(env, on);
+    const input = buildInput(env, on, {
+      moonSite: patch.moonSite ?? get().moonSite,
+      batteryType: patch.batteryType ?? get().batteryType,
+      future: patch.future ?? get().future,
+    });
     set({ ...patch, input, result: simulate(input), hourOfYear: hourFor(env, get().season, get().timeOfDay) });
   };
   const initialInput = buildInput('earth', DEFAULT_ON);
@@ -115,6 +137,18 @@ export const useApp = create<AppState>((set, get) => {
     setScreen: (screen) => set({ screen }),
 
     env: 'earth',
+    moonSite: 'equator',
+    setPlace: (p) => {
+      set({ selectedStation: null });
+      if (p === 'earth') recompute({ env: 'earth' });
+      else recompute({ env: 'moon', moonSite: p === 'moonPole' ? 'pole' : 'equator' });
+    },
+    batteryType: 'lfp',
+    setBatteryType: (batteryType) => recompute({ batteryType }),
+    future: { ...NO_FUTURE },
+    setFuture: (patch) => recompute({ future: { ...get().future, ...patch } }),
+    demo: null,
+    openDemo: (demo) => set({ demo }),
     season: 'summer',
     timeOfDay: 12,
     on: { ...DEFAULT_ON },
@@ -149,12 +183,12 @@ export const useApp = create<AppState>((set, get) => {
     tour: null,
     startTour: (id) => set({ tour: { id, step: 0 }, screen: 'explore', selectedStation: null }),
     setTourStep: (step) => { const t = get().tour; if (t) set({ tour: { ...t, step } }); },
-    endTour: () => set({ tour: null }),
+    endTour: () => set({ tour: null, demo: null }),
 
     reducedMotion: prefersReducedMotion,
     reset: () => {
-      set({ season: 'summer', timeOfDay: 12, playing: false, selectedStation: null, tour: null });
-      recompute({ env: 'earth', on: { ...DEFAULT_ON } });
+      set({ season: 'summer', timeOfDay: 12, playing: false, selectedStation: null, tour: null, demo: null });
+      recompute({ env: 'earth', moonSite: 'equator', on: { ...DEFAULT_ON }, batteryType: 'lfp', future: { ...NO_FUTURE } });
     },
   };
 });

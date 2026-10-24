@@ -153,7 +153,7 @@ export function simulate(input: SimInput): SimResult {
   // not only by the output rating. Same as Pb for batteries of 4 hours or less; matters for long batteries
   // like the Abu Dhabi benchmark (19 GWh behind 1.5 GW), which a 1.5 GW charge limit could not refill in a winter day.
   const PbCharge = batOn ? Math.max(Pb, Eb / fv('batteryChargeHoursMin')) : 0;
-  const eta = Math.sqrt(fv('batteryRoundTrip'));
+  const eta = Math.sqrt(input.batteryRoundTrip ?? fv('batteryRoundTrip'));
   const batSchedule = batOn && bat.mode === 'schedule' && Array.isArray(bat.schedule) && bat.schedule.length >= 24 ? bat.schedule : null;
   const gasSchedule = Array.isArray(p.gas?.schedule) && p.gas.schedule.length >= 24 ? p.gas.schedule : null;
   const hydroSchedule = Array.isArray(p.hydro?.schedule) && p.hydro.schedule.length >= 24 ? p.hydro.schedule : null;

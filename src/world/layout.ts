@@ -38,7 +38,7 @@ export const STATIONS: Record<WorldStation, Station> = {
   city:    { id: 'city',    label: 'City',      pos: [0, 0],    radius: 30, labelY: 22, lineFrom: null,      power: null },
   solar:   { id: 'solar',   label: 'Solar',     pos: [82, 18],  radius: 24, labelY: 10, lineFrom: [62, 14],  power: 'solar' },
   battery: { id: 'battery', label: 'Batteries', pos: [70, -38], radius: 15, labelY: 10, lineFrom: [56, -30], power: 'battery' },
-  reactor: { id: 'reactor', label: 'Nuclear',   pos: [-68, 48], radius: 18, labelY: 30, lineFrom: [-52, 38], power: 'nuclear' },
+  reactor: { id: 'reactor', label: 'Nuclear (fission)', pos: [-68, 48], radius: 18, labelY: 30, lineFrom: [-52, 38], power: 'nuclear' },
   wind:    { id: 'wind',    label: 'Wind',      pos: [-45, -92], radius: 24, labelY: 36, lineFrom: [-36, -72], power: 'wind' },
   gas:     { id: 'gas',     label: 'Gas',       pos: [-8, 88],  radius: 13, labelY: 22, lineFrom: [-6, 74],  power: 'gas' },
 };
