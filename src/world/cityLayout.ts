@@ -1,8 +1,7 @@
 // Deterministic city layout (buildings in the five district wedges) and power-line routes.
-// Shared by City, PowerLines, EnergyParticles and CameraRig (collision).
+// Shared by City, PowerLines and EnergyParticles.
 import * as THREE from 'three';
-import { CITY_RADIUS, DISTRICT_WEDGES, STATIONS, cityEntry } from './layout';
-import { STATION_IDS, type StationId } from '../types';
+import { CITY_RADIUS, DISTRICT_WEDGES, STATIONS, WORLD_STATIONS, cityEntry, type WorldStation } from './layout';
 
 export type CityDistrict = keyof typeof DISTRICT_WEDGES;
 export const CITY_DISTRICTS: CityDistrict[] = ['homes', 'commercial', 'transport', 'factory', 'datacenter'];
@@ -18,13 +17,7 @@ export interface Building {
   h: number;
   /** Rotation about y (local +x points away from the city centre). */
   rot: number;
-  /** Bounding circle radius for collision. */
-  r: number;
 }
-
-export interface Circle { x: number; z: number; r: number }
-
-export const SUBSTATION_RADIUS = 6;
 
 // ---------- power-line geometry ----------
 export const TRUNK_H = 9; // pylon height
@@ -58,8 +51,8 @@ const v3 = (p: [number, number], y: number) => new THREE.Vector3(p[0], y, p[1]);
 const SUB_POINT = new THREE.Vector3(0, SUB_Y, 0);
 
 /** Transmission route from each station's line start to the central substation. */
-export const TRUNKS: Partial<Record<StationId, Route>> = {};
-for (const id of STATION_IDS) {
+export const TRUNKS: Partial<Record<WorldStation, Route>> = {};
+for (const id of WORLD_STATIONS) {
   const lf = STATIONS[id].lineFrom;
   if (!lf) continue;
   TRUNKS[id] = makeRoute([v3(lf, WIRE_Y), v3(cityEntry(lf), WIRE_Y), SUB_POINT.clone()]);
@@ -89,7 +82,7 @@ function mulberry32(seed: number) {
 
 /** City-ground segments that must stay clear of buildings (power lines). */
 const CLEAR_SEGS: [number, number, number, number][] = [];
-for (const id of STATION_IDS) {
+for (const id of WORLD_STATIONS) {
   const lf = STATIONS[id].lineFrom;
   if (!lf) continue;
   const e = cityEntry(lf);
@@ -143,7 +136,7 @@ function generateBuildings(): Building[] {
         const half = Math.max(w, dp) / 2;
         if (w < 2) continue;
         if (CLEAR_SEGS.some((s) => distToSeg(x, z, s) < half + 0.5)) continue;
-        out.push({ d, x, z, w, dp, h, rot: -a, r: Math.hypot(w, dp) / 2 + 0.2 });
+        out.push({ d, x, z, w, dp, h, rot: -a });
       }
     }
   }
@@ -151,22 +144,3 @@ function generateBuildings(): Building[] {
 }
 
 export const BUILDINGS: Building[] = generateBuildings();
-
-/** Everything the walking camera collides with. */
-export const OBSTACLES: Circle[] = [
-  ...BUILDINGS.map((b) => ({ x: b.x, z: b.z, r: b.r })),
-  { x: 0, z: 0, r: SUBSTATION_RADIUS },
-  ...STATION_IDS.filter((id) => id !== 'city').map((id) => ({ x: STATIONS[id].pos[0], z: STATIONS[id].pos[1], r: STATIONS[id].radius })),
-];
-
-/** District of a ground point inside the city, or null. */
-export function districtAt(x: number, z: number): CityDistrict | null {
-  if (Math.hypot(x, z) > CITY_RADIUS) return null;
-  let a = Math.atan2(z, x);
-  if (a < 0) a += Math.PI * 2;
-  for (const d of CITY_DISTRICTS) {
-    const w = DISTRICT_WEDGES[d];
-    if (a >= w.from && a < w.to) return d;
-  }
-  return 'datacenter';
-}

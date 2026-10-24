@@ -17,9 +17,3 @@ export const BATTERY_MAX_CONTAINERS = 24;
 
 /** Wind ridge: rotor speed at full wind, radians per second. */
 export const ROTOR_MAX_RAD_S = 2.4;
-
-/** Hydro: how far the reservoir drops over a year of full use (world units). */
-export const RESERVOIR_DROP = 0.9;
-
-/** Battery factory: seconds for a pack to ride the conveyor at zero doublings. */
-export const CONVEYOR_SECONDS = 9;

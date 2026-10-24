@@ -1,9 +1,8 @@
 // Shared pieces for the island plant models: unit geometries, a matte material cache, sim helpers,
-// soft rising puffs and a small 3D sign. Owned by the plants module.
-import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
+// and soft rising puffs.
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { useApp } from '../../store';
 import { stepIndex } from '../../engine/timeIndex';
 import type { GenId } from '../../types';
@@ -264,33 +263,4 @@ export function Puffs({ origin, rate, color = '#ffffff', opacity = 0.45, max = 1
   });
 
   return <instancedMesh ref={ref} args={[GEO.puff, material, max]} frustumCulled={false} />;
-}
-
-// ---------- small sign ----------
-/** A small floating label (drei Html, no network). Sits under the UI overlays. */
-export function Sign({ position, children, width = 180, interactive = false }: {
-  position: V3; children: ReactNode; width?: number; interactive?: boolean;
-}) {
-  return (
-    <Html position={position} center distanceFactor={40} zIndexRange={[0, 0]} pointerEvents={interactive ? 'auto' : 'none'}>
-      <div
-        style={{
-          width,
-          background: 'var(--panel-solid)',
-          color: 'var(--ink)',
-          border: '1px solid var(--line-strong)',
-          borderRadius: 'var(--radius-sm)',
-          padding: '6px 9px',
-          fontFamily: 'var(--font)',
-          fontSize: 12,
-          lineHeight: 1.35,
-          boxShadow: 'var(--shadow)',
-          textAlign: 'center',
-          userSelect: 'none',
-        }}
-      >
-        {children}
-      </div>
-    </Html>
-  );
 }

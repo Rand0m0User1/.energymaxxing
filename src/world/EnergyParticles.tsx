@@ -6,8 +6,8 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { useApp } from '../store';
 import { SOURCE_COLORS } from '../data/colors';
-import { SOURCE_STATION } from './layout';
-import { GEN_IDS, type SourceId } from '../types';
+import { stationsFor, type WorldStation } from './layout';
+import type { GenId, SourceId } from '../types';
 import { BRANCHES, CHARGE_ROUTE, CITY_DISTRICTS, TRUNKS, sampleRoute, type Route } from './cityLayout';
 import { worldFrame, at } from './worldFrame';
 import { districtServed } from './districtState';
@@ -22,13 +22,17 @@ const RADIUS = 0.55;
 
 interface Stream { source: SourceId; color: THREE.Color; trunk: Route; branches: boolean }
 
+/** Generators shown on the island and the station each one lives at. */
+const GEN_STATION: [GenId, WorldStation][] = [['solar', 'solar'], ['wind', 'wind'], ['fission', 'reactor'], ['gas', 'gas']];
+
 function buildStreams(): Stream[] {
+  const visible = stationsFor(useApp.getState().env);
   const out: Stream[] = [];
-  for (const g of GEN_IDS) {
-    const trunk = TRUNKS[SOURCE_STATION[g]];
-    if (trunk) out.push({ source: g, color: new THREE.Color(SOURCE_COLORS[g]), trunk, branches: true });
+  for (const [g, id] of GEN_STATION) {
+    const trunk = TRUNKS[id];
+    if (trunk && visible.includes(id)) out.push({ source: g, color: new THREE.Color(SOURCE_COLORS[g]), trunk, branches: true });
   }
-  const bt = TRUNKS[SOURCE_STATION.battery];
+  const bt = TRUNKS.battery;
   if (bt) out.push({ source: 'battery', color: new THREE.Color(SOURCE_COLORS.battery), trunk: bt, branches: true });
   // charging: solar energy flowing into the battery yard
   out.push({ source: 'solar', color: new THREE.Color(SOURCE_COLORS.solar), trunk: CHARGE_ROUTE, branches: false });
@@ -73,7 +77,6 @@ export default function EnergyParticles() {
     const m = ref.current;
     if (!m) return;
     const s = useApp.getState();
-    if (s.inside) return;
     const dt = Math.min(rawDt, 0.1);
     const reduced = s.reducedMotion;
     const budget = reduced ? Math.floor(MAX / 4) : MAX;
@@ -81,7 +84,8 @@ export default function EnergyParticles() {
     const rateScale = reduced ? 0.25 : 1;
     const r = s.result;
     const i = worldFrame.step;
-    const charge = Math.max(0, at(r.batteryCharge, i));
+    // Battery charging drawn along the solar line, only for the part solar can cover.
+    const charge = Math.min(Math.max(0, at(r.batteryCharge, i)), Math.max(0, at(r.supply?.solar, i)));
 
     // where city power goes: weight branches by served MW
     let wsum = 0;
@@ -153,7 +157,6 @@ export default function EnergyParticles() {
 
     // move and write matrices
     const arr = m.instanceMatrix.array as Float32Array;
-    const hl = s.highlightSource;
     const p = sim.tmp;
     for (let n = 0; n < MAX; n++) {
       const o = n * 16;
@@ -175,7 +178,6 @@ export default function EnergyParticles() {
       if (dist <= st.trunk.len || sim.branch[n] < 0) sampleRoute(st.trunk, dist, p);
       else sampleRoute(BRANCHES[CITY_DISTRICTS[sim.branch[n]]], dist - st.trunk.len, p);
       let sc = 1;
-      if (hl && hl !== st.source) sc = 0.5;
       // shrink in/out at the ends so particles do not pop
       const edge = Math.min(dist, sim.len[n] - dist);
       if (edge < 1.5) sc *= Math.max(0.15, edge / 1.5);

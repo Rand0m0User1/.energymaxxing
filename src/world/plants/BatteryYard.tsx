@@ -1,4 +1,4 @@
-// Battery yard (SPEC §5.1, §8.2): rows of white containers. A soft bar on each container's side
+// Battery yard: rows of white containers. A soft bar on each container's side
 // fills with the battery's state of charge. Container count scales with GWh (up to 24 shown).
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';

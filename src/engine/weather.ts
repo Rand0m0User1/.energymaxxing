@@ -1,4 +1,4 @@
-// Weather: daily cloudiness, wind, and weather events (SPEC §9.2–9.4). Seeded, so repeatable.
+// Weather: daily cloudiness, wind, and weather events. Seeded, so repeatable.
 import type { Place } from '../data/places';
 import type { SimInput } from './types';
 import type { WeatherEvent, WeatherEventKind } from '../types';
@@ -64,6 +64,12 @@ export function buildWeather(place: Place, input: SimInput, steps: number, stepH
 
   if (place.body === 'orbit' || place.body === 'moon') {
     solar.fill(1);
+    return { solar, wind };
+  }
+
+  if (input.clearSky) {
+    solar.fill(1);
+    for (let t = 0; t < steps; t++) wind[t] = Math.min(1, monthlyAt(place.windMonthly, (startHour + t * stepHours) / 24));
     return { solar, wind };
   }
 

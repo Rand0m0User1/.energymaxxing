@@ -1,16 +1,15 @@
-// The city: ~60 block buildings in five tinted districts, windows that light up at night,
-// dimming and flicker when a district is short of power, blackout grey with a "No power" tag, and district clicks.
+// The city: block buildings in five tinted districts, windows that light up at night,
+// dimming and flicker when a district is short of power, and blackout grey. Clicking it selects the city.
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { useApp } from '../store';
-import { DISTRICT_LABELS, DISTRICT_TINTS } from '../data/colors';
-import { DISTRICT_WEDGES } from './layout';
+import { DISTRICT_TINTS } from '../data/colors';
+import { CITY_RADIUS } from './layout';
 import { BUILDINGS, CITY_DISTRICTS, type Building, type CityDistrict } from './cityLayout';
-import { worldFrame, safeStep } from './worldFrame';
+import { worldFrame } from './worldFrame';
 import { districtServed } from './districtState';
-import { DistrictCardBody } from './DistrictCard';
+import { selectStationClick } from './Stations';
 import { setCursor } from './cursor';
 
 const BLACKOUT = new THREE.Color('#55595E');
@@ -58,13 +57,18 @@ function windowsFor(b: Building, seedBase: number): WindowSpot[] {
 }
 
 export default function City() {
+  const selected = useApp((s) => s.selectedStation === 'city');
   return (
     <group>
+      {selected && (
+        <mesh rotation-x={-Math.PI / 2} position-y={0.25}>
+          <ringGeometry args={[CITY_RADIUS + 1.2, CITY_RADIUS + 1.9, 96]} />
+          <meshStandardMaterial color="#1f5f8b" roughness={0.9} metalness={0} />
+        </mesh>
+      )}
       {CITY_DISTRICTS.map((d, k) => (
         <District key={d} d={d} index={k} />
       ))}
-      <BlackoutTags />
-      <DistrictCard />
     </group>
   );
 }
@@ -117,8 +121,8 @@ function District({ d, index }: { d: CityDistrict; index: number }) {
 
   useFrame((_, dt) => {
     const s = useApp.getState();
-    if (s.inside) return;
-    const { on, frac } = districtServed(s, d, worldFrame.step);
+    // The title screen shows a calm, lit city.
+    const { on, frac } = s.screen === 'title' ? { on: true, frac: 1 } : districtServed(s, d, worldFrame.step);
     const blackout = on && frac <= 0.02;
     const st = state.current;
     const k = Math.min(1, dt * 4);
@@ -140,13 +144,7 @@ function District({ d, index }: { d: CityDistrict; index: number }) {
     wMat.color.copy(GLASS).multiplyScalar(dayScale * (1 - st.black * 0.6)).lerp(WARM, lightAmt);
   });
 
-  const onClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    if (e.delta > 6) return;
-    const s = useApp.getState();
-    s.selectStation(null);
-    s.selectDistrict(d);
-  };
+  const onClick = (e: ThreeEvent<MouseEvent>) => selectStationClick(e, 'city');
 
   return (
     <group>
@@ -161,69 +159,5 @@ function District({ d, index }: { d: CityDistrict; index: number }) {
       />
       {windows.length > 0 && <instancedMesh ref={wRef} args={[winGeo, wMat, windows.length]} raycast={() => null} />}
     </group>
-  );
-}
-
-/** Tag heights alternate a little so neighbouring tags do not sit on the same screen row. */
-const TAG_HEIGHT: Record<CityDistrict, number> = { homes: 10, commercial: 13, transport: 10, factory: 13, datacenter: 11 };
-/** More dark districts than this and one combined tag shows over the substation instead. */
-const MAX_SEPARATE_TAGS = 3;
-
-function TagPill({ text }: { text: string }) {
-  return (
-    <div
-      className="panel xsmall"
-      style={{ padding: '2px 8px', whiteSpace: 'nowrap', color: 'var(--ink)', pointerEvents: 'none', userSelect: 'none', borderRadius: 999, boxShadow: 'none' }}
-    >
-      {text}
-    </div>
-  );
-}
-
-/** Small "No power" tags over districts in full blackout (store hour, not the title display hour). */
-function BlackoutTags() {
-  const key = useApp((s) => {
-    if (s.screen === 'title' || s.inside) return '';
-    const i = safeStep(s.result, s.hourOfYear);
-    return CITY_DISTRICTS.filter((d) => {
-      const r = districtServed(s, d, i);
-      return r.on && r.frac <= 0.02;
-    }).join('|');
-  });
-  if (!key) return null;
-  const dark = key.split('|') as CityDistrict[];
-  if (dark.length > MAX_SEPARATE_TAGS) {
-    return (
-      <Html position={[0, 15, 0]} center zIndexRange={[10, 0]} pointerEvents="none">
-        <TagPill text={`No power in ${dark.length} districts`} />
-      </Html>
-    );
-  }
-  return (
-    <>
-      {dark.map((d) => {
-        // Over the district's own centroid, nudged a little outward so neighbouring tags separate.
-        const c = DISTRICT_WEDGES[d].centroid;
-        return (
-          <Html key={d} position={[c[0] * 1.2, TAG_HEIGHT[d], c[1] * 1.2]} center zIndexRange={[10, 0]} pointerEvents="none">
-            <TagPill text="No power" />
-          </Html>
-        );
-      })}
-    </>
-  );
-}
-
-// ---------- District card ----------
-
-function DistrictCard() {
-  const d = useApp((s) => s.selectedDistrict);
-  const hidden = useApp((s) => s.screen === 'title' || !!s.inside);
-  if (!d || hidden || d === 'hydrogen') return null;
-  const c = DISTRICT_WEDGES[d].centroid;
-  return (
-    <Html position={[c[0], 18, c[1]]} zIndexRange={[20, 11]}>
-      <DistrictCardBody d={d} label={DISTRICT_LABELS[d]} />
-    </Html>
   );
 }

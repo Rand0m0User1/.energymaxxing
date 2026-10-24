@@ -27,7 +27,7 @@ export interface CostSettings {
   batteryPerKWh: number;   // $/kWh installed
   fissionPerKW: number;    // $/kW overnight
   waccPct: number;         // cost of capital, %
-  surplusPrice: number;    // $/MWh paid for curtailed solar (Handmer test)
+  surplusPrice: number;    // $/MWh paid for wasted solar
 }
 
 export interface SimInput {
@@ -39,8 +39,8 @@ export interface SimInput {
   flexibleDataCenter: boolean;  // 30% of DC load can pause up to 4 h
   realisticOutages: boolean;    // fission refuelling outages
   fissionFlexible: boolean;     // fission can drop to 50% when solar floods
-  heatStorage: boolean;         // Handmer sand pile: trims winter heating demand
-  snow: boolean;                // snow on panels at high latitude (assumption)
+  heatStorage: boolean;         // sand-pile heat storage: trims winter heating demand
+  snow: boolean;                // snow on panels at high latitude 
   lunarMast: boolean;           // 10 m mast at lunar south pole -> 90% lit
   industryFlex: boolean;        // flexible industry absorbs curtailed energy
   events: WeatherEvent[];
@@ -48,6 +48,8 @@ export interface SimInput {
   costs: CostSettings;
   /** Optional: replace the district model with a flat demand of this many GW (used by the benchmark test). */
   flatDemandGW?: number;
+  /** Clear sky every day and steady seasonal wind: no random weather. */
+  clearSky?: boolean;
   /** Optional: which day of year an orbit (one-day) sim covers. Default: the place's hardest day. */
   orbitDay?: number;
 }

@@ -1,24 +1,12 @@
-// App shell: the 3D world is always mounted; overlays change with the screen.
+// App shell: the 3D city fills the screen; one home panel holds every control.
 import { useEffect } from 'react';
 import { useApp } from './store';
 import WorldCanvas from './world/WorldCanvas';
-import TitleScreen from './screens/TitleScreen';
-import TopBar from './ui/TopBar';
-import PlantPanel from './ui/PlantPanel';
-import BottomBar from './ui/BottomBar';
-import PlacePicker from './ui/PlacePicker';
-import SourcesDrawer from './ui/SourcesDrawer';
-import HelpOverlay from './ui/HelpOverlay';
-import StationPrompt from './ui/StationPrompt';
-import { useKeyboard } from './ui/useKeyboard';
-import Dashboard from './ui/dashboard/Dashboard';
-import InsideView from './inside/InsideView';
-import LessonCard from './lessons/LessonCard';
-import LessonPicker from './lessons/LessonPicker';
-import PresenterOverlay from './lessons/PresenterOverlay';
-import ToolHost from './tools/ToolHost';
+import TitleScreen from './ui/TitleScreen';
+import HomePanel from './ui/HomePanel';
+import TourCard from './ui/TourCard';
 
-// Expose the store for the headless smoke test (scripts/smoke.mjs) and for debugging.
+// Exposed for the headless check script (scripts/quickshot.mjs).
 if (typeof window !== 'undefined') (window as unknown as { __app: typeof useApp }).__app = useApp;
 
 function useTicker() {
@@ -38,11 +26,8 @@ function useTicker() {
 
 export default function App() {
   const screen = useApp((s) => s.screen);
-  const lesson = useApp((s) => s.lesson);
-  const inside = useApp((s) => s.inside);
-  const tool = useApp((s) => s.tool);
+  const tour = useApp((s) => s.tour);
   useTicker();
-  useKeyboard();
 
   return (
     <div className="app">
@@ -54,20 +39,10 @@ export default function App() {
           <TitleScreen />
         ) : (
           <>
-            <TopBar />
-            {screen === 'tour' && (lesson ? <LessonCard /> : <LessonPicker />)}
-            <PlantPanel />
-            {!tool && <Dashboard />}
-            <BottomBar />
-            <StationPrompt />
+            <HomePanel />
+            {tour && <TourCard />}
           </>
         )}
-        {tool && <ToolHost />}
-        {inside && <InsideView />}
-        <PlacePicker />
-        <SourcesDrawer />
-        <HelpOverlay />
-        <PresenterOverlay />
       </div>
     </div>
   );

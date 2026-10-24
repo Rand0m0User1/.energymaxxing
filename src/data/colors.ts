@@ -1,4 +1,4 @@
-// Source and district colors, used everywhere (particles, charts, cards). See SPEC §14.
+// Source and district colors, used everywhere (particles, charts, cards).
 import type { DistrictId, SourceId } from '../types';
 
 export const SOURCE_COLORS: Record<SourceId, string> = {

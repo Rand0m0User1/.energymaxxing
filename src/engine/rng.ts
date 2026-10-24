@@ -1,4 +1,4 @@
-// Seeded random numbers (SPEC §9.1). Same seed, same weather.
+// Seeded random numbers. Same seed, same weather.
 
 /** Mix a few integers into one 32-bit seed. */
 export function hashSeed(...parts: number[]): number {

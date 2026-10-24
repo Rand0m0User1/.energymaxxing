@@ -1,79 +1,62 @@
-// Small card floating next to the selected station: name, live output, the plant's switch and slider, and actions.
+// Small card next to the selected station: name, one plain sentence and its on/off switch.
 import { Html } from '@react-three/drei';
 import { useApp } from '../store';
-import { STATIONS } from './layout';
-import { Button, IconButton, Icon, RealTerm } from '../ui/kit';
-import { PlantControls } from '../ui/PlantCard';
-import type { SourceId, StationId } from '../types';
-import { LABEL_HEIGHT, STATION_SOURCES, batteryActivity, stationLine, wastedNow } from './stationStatus';
+import { STATIONS, isWorldStation, stationsFor, type WorldStation } from './layout';
+import { IconButton, Icon, Switch } from '../ui/kit';
+import { cityLitNow } from './districtState';
 import { stopCanvasEvents } from './cursor';
-import { SafeBoundary } from './Stations';
+
+const SENTENCE: Record<WorldStation, string> = {
+  city: 'Needs power every hour, day and night.',
+  solar: 'Makes power from sunlight. Nothing at night.',
+  wind: 'Makes power when the wind blows.',
+  battery: 'Store extra power and release it later.',
+  reactor: 'Runs day and night, in any season.',
+  gas: 'Runs on demand, but burns fuel and pollutes.',
+};
 
 export default function FloatingCard() {
   const id = useApp((s) => s.selectedStation);
-  const hidden = useApp((s) => s.screen === 'title' || !!s.inside);
-  if (!id || hidden) return null;
+  const env = useApp((s) => s.env);
+  const hidden = useApp((s) => s.screen === 'title');
+  if (hidden || !isWorldStation(id) || !stationsFor(env).includes(id)) return null;
   const st = STATIONS[id];
   return (
-    <Html key={id} position={[st.pos[0], LABEL_HEIGHT[id], st.pos[1]]} zIndexRange={[20, 11]}>
+    <Html key={id} position={[st.pos[0], st.labelY, st.pos[1]]} zIndexRange={[20, 11]}>
       <CardBody id={id} />
     </Html>
   );
 }
 
-function CardBody({ id }: { id: StationId }) {
+function CardBody({ id }: { id: WorldStation }) {
   const st = STATIONS[id];
-  const line = useApp((s) => stationLine(s, id));
-  const activity = useApp((s) => (id === 'battery' ? batteryActivity(s) : ''));
-  const wasted = useApp((s) => (id === 'solar' ? wastedNow(s) : ''));
-  const openInside = useApp((s) => s.openInside);
-  const openTool = useApp((s) => s.openTool);
+  const power = st.power;
+  const on = useApp((s) => (power ? s.on[power] : true));
+  const setOn = useApp((s) => s.setOn);
+  const lit = useApp((s) => (id === 'city' ? cityLitNow(s) : true));
   const close = () => useApp.getState().selectStation(null);
 
-  const sources: SourceId[] = id === 'battery' ? ['battery'] : STATION_SOURCES[id] ?? [];
-
   return (
-    <div style={{ transform: 'translate(-50%, calc(-100% - 14px))' }} {...stopCanvasEvents}>
-      <div className="panel" style={{ width: 284, padding: '12px 14px', pointerEvents: 'auto' }} role="dialog" aria-label={st.label}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 'var(--fs-md)' }}>{st.label}</div>
-            {line && <div className="small muted num">{line}</div>}
+    <div style={{ transform: 'translate(-50%, calc(-100% - 12px))' }} {...stopCanvasEvents}>
+      <div className="panel" style={{ width: 220, padding: '10px 12px', pointerEvents: 'auto' }} role="dialog" aria-label={st.label}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ flex: 1, fontWeight: 600, fontSize: 'var(--fs-md)' }}>
+            {st.label}
+            {id === 'city' && (
+              <span style={{ fontWeight: 400, color: lit ? 'var(--ink-2)' : 'var(--bad)' }}> · {lit ? 'Lights on' : 'Blackout'}</span>
+            )}
           </div>
-          <IconButton label="Close" onClick={close} style={{ width: 26, height: 26 }}>
-            <Icon name="close" size={14} />
+          <IconButton label="Close" onClick={close} style={{ width: 24, height: 24 }}>
+            <Icon name="close" size={13} />
           </IconButton>
         </div>
-        {activity && <div className="small num" style={{ marginTop: 4 }}>{activity}</div>}
-        {wasted && (
-          <div style={{ marginTop: 4 }}>
-            <div className="small num">{wasted} GW of sun is wasted now. Nothing can use or store it.</div>
-            <RealTerm>curtailment</RealTerm>
+        <div className="small" style={{ marginTop: 4, color: 'var(--ink-2)' }}>{SENTENCE[id]}</div>
+        {power && (
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span className="small" style={{ fontWeight: 600 }}>{on ? 'On' : 'Off'}</span>
+            <Switch checked={on} onChange={(v) => setOn(power, v)} label={`${st.label} on or off`} />
           </div>
         )}
-        {id === 'city' && <div className="small" style={{ marginTop: 4 }}>Click a district to see what it uses.</div>}
-        {sources.length > 0 && (
-          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {sources.map((src) => (
-              <SafeBoundary key={src} name={`PlantControls ${src}`}>
-                <PlantControls source={src} compact />
-              </SafeBoundary>
-            ))}
-          </div>
-        )}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-          {st.inside && (
-            <Button primary onClick={() => openInside(st.inside!)}>
-              Look inside
-            </Button>
-          )}
-          {(id === 'batteryFactory' || id === 'industry') && (
-            <Button primary onClick={() => openTool(id)}>
-              Open
-            </Button>
-          )}
-          {id === 'reactor' && <Button onClick={() => openTool('reactorRow')}>Reactor Row</Button>}
-        </div>
       </div>
     </div>
   );

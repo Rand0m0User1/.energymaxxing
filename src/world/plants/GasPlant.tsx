@@ -1,4 +1,4 @@
-// Gas plant (SPEC §5.1, §8.6): turbine hall and one stack. Faint grey puffs rise while it runs,
+// Gas plant: turbine hall and one stack. Faint grey puffs rise while it runs,
 // faster when it makes more power.
 import { SOURCE_COLORS } from '../../data/colors';
 import { NEUTRAL, Block, Cyl, Puffs, accent, genFrac, usePlantOn } from './shared';

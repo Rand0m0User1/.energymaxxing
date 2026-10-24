@@ -1,4 +1,4 @@
-// Sunlight model (SPEC §9.2 Earth, §9.3 off Earth). Pure functions, no React.
+// Sunlight model. Pure functions, no React.
 import type { PlaceId } from '../types';
 import type { SunPosition } from './types';
 import { PLACES, type Place } from '../data/places';
@@ -25,7 +25,7 @@ export interface SunOptions {
   lunarMast?: boolean;
 }
 
-/** Solar declination in degrees for a (fractional, 1-based) day of year n. SPEC §9.2. */
+/** Solar declination in degrees for a (fractional, 1-based) day of year n. */
 export function declinationDeg(n: number): number {
   return 23.44 * Math.sin((2 * Math.PI * (284 + n)) / 365);
 }
@@ -122,7 +122,7 @@ function marsSunVector(lat: number, hourOfYear: number): SunVector {
 
 /**
  * Sun position for the 3D sky at a given hour of year (0..8760, fractional) at a place.
- * Earth: SPEC §9.2 formula, azimuth clockwise from north. Off Earth: SPEC §9.3 patterns.
+ * Earth: formula, azimuth clockwise from north. Off Earth: patterns.
  * Orbit "elevation" is positive while lit and negative in shadow.
  */
 export function sunPosition(placeId: PlaceId, hourOfYear: number, opts: SunOptions = {}): SunPosition {

@@ -1,47 +1,47 @@
-// Island layout. World units: 1 unit ≈ 1 m at walking scale; the island is "not to scale".
-// Axes: +x = east, -z = north, +y = up. Sun azimuth (clockwise from north) maps to
+// Island layout. Axes: +x = east, -z = north, +y = up. Sun azimuth (clockwise from north) maps to
 // direction (sin az, ·, -cos az).
-import type { DistrictId, InsideViewId, StationId } from '../types';
+import type { DistrictId, StationId } from '../types';
+import type { Env, PowerId } from '../store';
 
 export const ISLAND_RADIUS = 150;
 export const CITY_RADIUS = 30;
-export const SUBSTATION: [number, number, number] = [0, 0, 0];
-export const EYE_HEIGHT = 1.8;
-export const WALK_SPEED = 8;
-export const RUN_SPEED = 25;
+
+/** Stations shown in the world. */
+export type WorldStation = 'city' | 'solar' | 'battery' | 'reactor' | 'gas' | 'wind';
+export const WORLD_STATIONS: WorldStation[] = ['city', 'solar', 'battery', 'reactor', 'gas', 'wind'];
+const MOON_STATIONS: WorldStation[] = ['city', 'solar', 'battery', 'reactor'];
+
+export function stationsFor(env: Env): WorldStation[] {
+  return env === 'moon' ? MOON_STATIONS : WORLD_STATIONS;
+}
+
+export function isWorldStation(id: StationId | null): id is WorldStation {
+  return id != null && (WORLD_STATIONS as StationId[]).includes(id);
+}
 
 export interface Station {
-  id: StationId;
+  id: WorldStation;
   label: string;
   /** Centre on the ground (x, z). */
   pos: [number, number];
-  /** Rough footprint radius, used for clicks, collision and camera framing. */
+  /** Rough footprint radius, used for clicks. */
   radius: number;
-  inside: InsideViewId | null;
-  /** Camera offset from pos for fly-to (x, y, z). */
-  view: [number, number, number];
+  /** Height of the label and card (world units). */
+  labelY: number;
   /** Where the power line leaves this station (x, z), null if it has no line. */
   lineFrom: [number, number] | null;
+  /** Power source switched by this station, null for the city. */
+  power: PowerId | null;
 }
 
-export const STATIONS: Record<StationId, Station> = {
-  city:           { id: 'city',           label: 'City',               pos: [0, 0],     radius: 30, inside: null,      view: [0, 55, 70],  lineFrom: null },
-  solar:          { id: 'solar',          label: 'Solar farm',         pos: [82, 18],   radius: 24, inside: 'solar',   view: [10, 30, 45], lineFrom: [62, 14] },
-  battery:        { id: 'battery',        label: 'Battery yard',       pos: [70, -38],  radius: 15, inside: 'battery', view: [8, 22, 34],  lineFrom: [56, -30] },
-  reactor:        { id: 'reactor',        label: 'Reactor hall',       pos: [-68, 48],  radius: 18, inside: 'reactor', view: [-6, 28, 46], lineFrom: [-52, 38] },
-  fusion:         { id: 'fusion',         label: 'Fusion lab',         pos: [-92, -20], radius: 14, inside: 'fusion',  view: [-4, 22, 34], lineFrom: [-78, -16] },
-  wind:           { id: 'wind',           label: 'Wind ridge',         pos: [-45, -92], radius: 24, inside: 'wind',    view: [0, 34, 60],  lineFrom: [-36, -72] },
-  gas:            { id: 'gas',            label: 'Gas plant',          pos: [-8, 88],   radius: 13, inside: 'gas',     view: [4, 22, 34],  lineFrom: [-6, 74] },
-  hydro:          { id: 'hydro',          label: 'Hydro dam and geothermal', pos: [40, -95], radius: 22, inside: 'hydro', view: [0, 30, 52], lineFrom: [32, -74] },
-  batteryFactory: { id: 'batteryFactory', label: 'Battery Factory',    pos: [-46, 108], radius: 15, inside: null,      view: [0, 24, 38],  lineFrom: null },
-  industry:       { id: 'industry',       label: 'Industry Quarter',   pos: [62, 92],   radius: 20, inside: null,      view: [0, 30, 48],  lineFrom: null },
+export const STATIONS: Record<WorldStation, Station> = {
+  city:    { id: 'city',    label: 'City',      pos: [0, 0],    radius: 30, labelY: 22, lineFrom: null,      power: null },
+  solar:   { id: 'solar',   label: 'Solar',     pos: [82, 18],  radius: 24, labelY: 10, lineFrom: [62, 14],  power: 'solar' },
+  battery: { id: 'battery', label: 'Batteries', pos: [70, -38], radius: 15, labelY: 10, lineFrom: [56, -30], power: 'battery' },
+  reactor: { id: 'reactor', label: 'Nuclear',   pos: [-68, 48], radius: 18, labelY: 30, lineFrom: [-52, 38], power: 'nuclear' },
+  wind:    { id: 'wind',    label: 'Wind',      pos: [-45, -92], radius: 24, labelY: 36, lineFrom: [-36, -72], power: 'wind' },
+  gas:     { id: 'gas',     label: 'Gas',       pos: [-8, 88],  radius: 13, labelY: 22, lineFrom: [-6, 74],  power: 'gas' },
 };
-
-/** Which station each generator lives at (for particles and signs). */
-export const SOURCE_STATION = {
-  solar: 'solar', battery: 'battery', fission: 'reactor', fusion: 'fusion',
-  wind: 'wind', gas: 'gas', hydro: 'hydro', geothermal: 'hydro',
-} as const;
 
 /** City districts as wedges around the central substation. Angles in radians, measured from +x toward +z. */
 export const DISTRICT_WEDGES: Record<Exclude<DistrictId, 'hydrogen'>, { from: number; to: number; centroid: [number, number] }> = {
@@ -51,12 +51,6 @@ export const DISTRICT_WEDGES: Record<Exclude<DistrictId, 'hydrogen'>, { from: nu
   factory:    { from: 4.4,  to: 5.3,  centroid: [2, -20] },
   datacenter: { from: 5.3,  to: 6.283, centroid: [18, -10] },
 };
-
-/** The hydrogen and ammonia plant sits in the Industry Quarter. */
-export const HYDROGEN_POS: [number, number] = [74, 100];
-
-/** Reactor Row: pads for the "Build the next reactor" tool, in a line west of the reactor hall. */
-export const REACTOR_ROW = { start: [-112, 20] as [number, number], step: [0, 9] as [number, number], count: 10 };
 
 /** Point where a power line enters the city ring, on the way to the central substation. */
 export function cityEntry(from: [number, number]): [number, number] {

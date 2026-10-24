@@ -2,8 +2,7 @@
 // Updated once per frame by <WorldClock/> (runs before the other useFrame callbacks).
 // On the title screen the visuals use a local "display hour" (a dusk loop) without touching store.hourOfYear.
 import { useFrame } from '@react-three/fiber';
-import { useApp } from '../store';
-import { PLACES } from '../data/places';
+import { useApp, hourFor } from '../store';
 import { sunPosition, sunriseSunset } from '../engine/sun';
 import { stepIndex } from '../engine/timeIndex';
 import type { SimResult } from '../engine/types';
@@ -28,9 +27,8 @@ const TITLE_LOOP_S = 36;
 /** Visual hour: store.hourOfYear, except on the title screen where it loops gently through dusk. */
 export function computeDisplayHour(elapsed: number): number {
   const s = useApp.getState();
-  if (s.screen !== 'title') return s.hourOfYear;
-  const place = PLACES[s.input.place];
-  const day = place.hardestDay;
+  if (s.screen !== 'title' || s.env !== 'earth') return s.hourOfYear;
+  const day = Math.floor(hourFor('earth', s.season, 12) / 24);
   let start = 17.5;
   let end = 20.5;
   try {

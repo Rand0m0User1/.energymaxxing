@@ -1,4 +1,4 @@
-// 24-hour demand shapes per district per season (SPEC §6.2). All shapes are model assumptions.
+// 24-hour demand shapes per district per season. 
 // Raw numbers are relative; they are normalized here so each day's mean is 1 (the slider value).
 // Hour index 0 = midnight to 1 AM, local time.
 import type { DistrictId } from '../types';

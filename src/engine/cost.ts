@@ -1,4 +1,4 @@
-// Cost model (SPEC §9.7). Cost is divided by energy the city USED, so overbuilding raises the price.
+// Cost model. Cost is divided by energy the city USED, so overbuilding raises the price.
 import type { CostSettings } from './types';
 import type { GenId } from '../types';
 import { fv } from '../data/facts';
@@ -42,7 +42,7 @@ export interface CostOutputs {
 
 type Range = [number, number];
 
-const lazard = (): Record<GenId, Range> => ({
+const costRanges = (): Record<GenId, Range> => ({
   solar: [fv('lcoeSolarLow'), fv('lcoeSolarHigh')],
   wind: [fv('lcoeWindLow'), fv('lcoeWindHigh')],
   fission: [fv('lcoeNuclearLow'), fv('lcoeNuclearHigh')],
@@ -53,20 +53,20 @@ const lazard = (): Record<GenId, Range> => ({
 });
 
 /**
- * Simple mode: Lazard low/high per source.
- *  - solar, wind, fission are paid for by size (Lazard $/MWh × the US-average output of that size),
+ * Simple mode: a low/high cost range per plant type.
+ *  - solar, wind, fission are paid for by size ($/MWh × the US-average output of that size),
  *    so a weak site or a turned-down reactor costs more per useful MWh;
  *  - geothermal and fusion: $/MWh × what they could make; hydro and gas: $/MWh × what they made;
  *  - battery: storage adder per MWh it gave back.
- * Advanced mode: solar, battery and fission use build cost × CRF + upkeep (+ fuel); the rest stay on Lazard.
+ * Advanced mode: solar, battery and fission use build cost × CRF + upkeep (+ fuel); the rest use the simple ranges.
  * Spare energy (curtailed or soaked up by flexible industry) is credited at the surplus price.
  */
 export function computeCost(c: CostInputs): CostOutputs {
-  const L = lazard();
+  const L = costRanges();
   const hoursSpan = 8760 * c.spanYears;
   const refCF: Partial<Record<GenId, number>> = { solar: fv('solarCFUS'), wind: fv('windCFUS'), fission: fv('nuclearCFUS') };
 
-  const lazardEnergy = (g: GenId): number => {
+  const rangeEnergy = (g: GenId): number => {
     if (g === 'solar' || g === 'wind' || g === 'fission') return c.capGW[g] * 1000 * (refCF[g] ?? 1) * hoursSpan;
     if (g === 'geothermal' || g === 'fusion') return c.availMWh[g];
     return c.usedMWh[g];
@@ -79,7 +79,7 @@ export function computeCost(c: CostInputs): CostOutputs {
 
   for (const g of Object.keys(L) as GenId[]) {
     if (advancedSet.includes(g)) continue;
-    const e = lazardEnergy(g);
+    const e = rangeEnergy(g);
     low += L[g][0] * e;
     high += L[g][1] * e;
   }

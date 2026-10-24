@@ -1,4 +1,4 @@
-// City demand per district per step (SPEC §6). Slider MW = that district's average over the year.
+// City demand per district per step. Slider MW = that district's average over the year.
 import type { Place } from '../data/places';
 import type { SimInput } from './types';
 import { DISTRICT_IDS, type DistrictId } from '../types';
@@ -38,7 +38,7 @@ export function buildDemand(place: Place, input: SimInput, steps: number, stepHo
     return { byDistrict, total, hydrogenFlexible };
   }
 
-  // Homes heating / cooling (SPEC §6.2): the share of winter (summer) home demand that is heating (cooling).
+  // Homes heating / cooling: the share of winter (summer) home demand that is heating (cooling).
   const hs = Math.min(0.9, Math.max(0, place.heatingShare));
   const cs = Math.min(0.9, Math.max(0, place.coolingShare));
   const aHeat = hs / (1 - hs);

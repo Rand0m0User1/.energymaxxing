@@ -1,4 +1,4 @@
-// The simulation engine (SPEC §9). simulate(input) => SimResult. Pure, synchronous, deterministic.
+// The simulation engine. simulate(input) => SimResult. Pure, synchronous, deterministic.
 import type { SimInput, SimResult, SimTotals } from './types';
 import { DISTRICT_IDS, GEN_IDS, type DistrictId, type GenId } from '../types';
 import { PLACES, type Place } from '../data/places';
@@ -34,7 +34,7 @@ function trackedFromVector(v: { east: number; up: number }): number {
   // Panels on a north-south axis turn east to west: they catch the part of the sunlight in the east-up plane.
   // This is what makes tracked solar flat-topped through the day (more useful hours than fixed panels).
   const incidence = Math.sqrt(v.up * v.up + v.east * v.east);
-  // Low sun passes through more air: dim it (SPEC §9.2 uses cos(zenith)^1.15 for flat panels).
+  // Low sun passes through more air: dim it^1.15 for flat panels).
   return incidence * Math.pow(v.up, AIR_EXTRA);
 }
 

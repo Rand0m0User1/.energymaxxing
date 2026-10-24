@@ -1,4 +1,4 @@
-// Engine validation checks (SPEC §9.8) plus safety, conservation, speed and determinism.
+// Engine validation checks plus safety, conservation, speed and determinism.
 import { describe, expect, it } from 'vitest';
 import { simulate } from '../simulate';
 import { sunPosition, sunriseSunset, lunarPoleLit, geoEclipseMinutes } from '../sun';
@@ -187,7 +187,8 @@ describe('engine behaviour', () => {
   it('shares of served energy add up to 1', () => {
     const i = defaultInput();
     i.place = 'berlin';
-    i.plants.wind.on = true;
+    i.plants.wind = { on: true, gw: 1.5, schedule: null };
+    i.plants.gas = { on: true, gw: 1.6, schedule: null };
     const t = simulate(i).totals;
     const sum = Object.values(t.share).reduce((a, b) => a + b, 0);
     expect(sum).toBeCloseTo(1, 4);

@@ -1,4 +1,4 @@
-// Wind ridge (SPEC §5.1, §8.5): five turbines on a low hill. Rotors turn with the modelled wind
+// Wind ridge: five turbines on a low hill. Rotors turn with the modelled wind
 // when wind is on, and stand still when it is off.
 import { useRef } from 'react';
 import * as THREE from 'three';

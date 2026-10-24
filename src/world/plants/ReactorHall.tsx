@@ -1,4 +1,4 @@
-// Reactor hall (SPEC §5.1, §8.3): containment dome, turbine hall, cooling tower with slow steady steam
+// Reactor hall: containment dome, turbine hall, cooling tower with slow steady steam
 // when fission runs (same day and night), and a microreactor on a truck trailer beside it.
 import { useMemo } from 'react';
 import * as THREE from 'three';

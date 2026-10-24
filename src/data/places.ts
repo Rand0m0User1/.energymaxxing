@@ -1,4 +1,4 @@
-// Place presets (SPEC §7). Visual fields are used by the 3D world; climate fields by the engine.
+// Place presets. Visual fields are used by the 3D world; climate fields by the engine.
 // Owned by the engine module; world/UI modules read it.
 import type { Body, PlaceId } from '../types';
 
@@ -20,17 +20,17 @@ export interface Place {
   hardestDay: number;
   /** One plain line about the longest dark period. */
   darkness: string;
-  /** Monthly clearness factor 0..1 (Jan..Dec), assumption. Calibrated so yearly solar output matches SPEC §9.2 ranges
+  /** Monthly clearness factor 0..1 (Jan..Dec). Calibrated so yearly solar output matches
    *  (it also covers haze, dust and heat losses, so hot hazy summers sit lower than clear desert winters). */
   clearness: number[];
-  /** Monthly mean wind capacity factor 0..1 (Jan..Dec), assumption. */
+  /** Monthly mean wind capacity factor 0..1 (Jan..Dec). */
   windMonthly: number[];
-  /** Maximum hydro and geothermal size available at this place (GW), assumption. */
+  /** Maximum hydro and geothermal size available at this place (GW). */
   hydroMaxGW: number;
   geothermalMaxGW: number;
-  /** Heating share of winter home demand (0..1), assumption. */
+  /** Heating share of winter home demand (0..1). */
   heatingShare: number;
-  /** Cooling share of summer home demand (0..1), assumption. */
+  /** Cooling share of summer home demand (0..1). */
   coolingShare: number;
 }
 

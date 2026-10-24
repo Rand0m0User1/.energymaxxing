@@ -1,12 +1,11 @@
-// The round island: ground, sea (Earth), regolith plain (Moon/Mars) or a floating deck (orbit), footpaths and the city ground.
+// The round island: grassy island in the sea (Earth) or a grey regolith plain (Moon), footpaths and the city ground.
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useApp } from '../store';
 import { PLACES } from '../data/places';
 import { DISTRICT_TINTS } from '../data/colors';
-import { CITY_RADIUS, DISTRICT_WEDGES, ISLAND_RADIUS, STATIONS } from './layout';
+import { CITY_RADIUS, DISTRICT_WEDGES, ISLAND_RADIUS, STATIONS, WORLD_STATIONS, stationsFor } from './layout';
 import { CITY_DISTRICTS } from './cityLayout';
-import { STATION_IDS } from '../types';
 
 const R = ISLAND_RADIUS;
 
@@ -21,13 +20,14 @@ function luminance(hex: string) {
 
 export default function Island() {
   const placeId = useApp((s) => s.input.place);
+  const env = useApp((s) => s.env);
   const place = PLACES[placeId];
   const body = place.body;
   const ground = place.ground;
   const accent = place.groundAccent;
 
-  const sideMat = useMemo(() => new THREE.MeshStandardMaterial({ color: body === 'orbit' ? mix(ground, '#7d848c', 0.5) : mix(ground, '#E6DAC0', body === 'earth' ? 0.35 : 0), roughness: 1, metalness: 0 }), [ground, body]);
-  const topMat = useMemo(() => new THREE.MeshStandardMaterial({ color: ground, roughness: 1, metalness: body === 'orbit' ? 0.1 : 0 }), [ground, body]);
+  const sideMat = useMemo(() => new THREE.MeshStandardMaterial({ color: mix(ground, '#E6DAC0', body === 'earth' ? 0.35 : 0), roughness: 1, metalness: 0 }), [ground, body]);
+  const topMat = useMemo(() => new THREE.MeshStandardMaterial({ color: ground, roughness: 1, metalness: 0 }), [ground, body]);
   const seaColor = useMemo(() => mix('#8FB2C6', place.skyDay, 0.25), [place.skyDay]);
 
   return (
@@ -43,43 +43,15 @@ export default function Island() {
           </mesh>
         </>
       )}
-      {(body === 'moon' || body === 'mars') && (
+      {body !== 'earth' && (
         <mesh rotation-x={-Math.PI / 2} receiveShadow material={topMat}>
           <circleGeometry args={[2400, 96]} />
         </mesh>
       )}
-      {body === 'orbit' && <Deck sideMat={sideMat} topMat={topMat} accent={accent} />}
 
-      <Patches color={accent} spread={body === 'moon' || body === 'mars' ? 900 : R - 8} count={body === 'moon' || body === 'mars' ? 70 : 34} crater={body === 'moon'} />
+      <Patches color={accent} spread={body !== 'earth' ? 900 : R - 8} count={body !== 'earth' ? 70 : 34} crater={body !== 'earth'} />
       <CityGround ground={ground} />
-      <Paths ground={ground} />
-    </group>
-  );
-}
-
-function Deck({ sideMat, topMat, accent }: { sideMat: THREE.Material; topMat: THREE.Material; accent: string }) {
-  return (
-    <group>
-      <mesh receiveShadow position={[0, -1.5, 0]} material={[sideMat, topMat, sideMat]}>
-        <cylinderGeometry args={[R, R, 3, 128]} />
-      </mesh>
-      <mesh position={[0, -3.6, 0]}>
-        <cylinderGeometry args={[R + 2.5, R + 2.5, 1.2, 128]} />
-        <meshStandardMaterial color={accent} roughness={0.9} metalness={0.1} />
-      </mesh>
-      <mesh position={[0, -20, 0]}>
-        <cylinderGeometry args={[R * 0.55, 14, 30, 48]} />
-        <meshStandardMaterial color={accent} roughness={0.9} metalness={0.1} />
-      </mesh>
-      {[0, 1, 2, 3, 4, 5].map((i) => {
-        const a = (i / 6) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.cos(a) * (R * 0.75), -8, Math.sin(a) * (R * 0.75)]} rotation={[0, -a, 0]}>
-            <boxGeometry args={[R * 0.5, 1.4, 1.4]} />
-            <meshStandardMaterial color={accent} roughness={0.9} metalness={0.1} />
-          </mesh>
-        );
-      })}
+      <Paths ground={ground} env={env} />
     </group>
   );
 }
@@ -104,7 +76,7 @@ function Patches({ color, spread, count, crater }: { color: string; spread: numb
       const z = Math.sin(a) * r;
       if (Math.hypot(x, z) < CITY_RADIUS + 6) continue;
       // keep station footprints clean
-      if (STATION_IDS.some((id) => Math.hypot(x - STATIONS[id].pos[0], z - STATIONS[id].pos[1]) < STATIONS[id].radius + 4)) continue;
+      if (WORLD_STATIONS.some((id) => Math.hypot(x - STATIONS[id].pos[0], z - STATIONS[id].pos[1]) < STATIONS[id].radius + 4)) continue;
       const s = (crater ? 3 : 4) + rnd() * (crater ? 10 : 9);
       if (!crater && r + s > R - 2 && spread <= R) continue;
       dummy.position.set(x, 0.03, z);
@@ -141,13 +113,13 @@ function CityGround({ ground }: { ground: string }) {
   );
 }
 
-function Paths({ ground }: { ground: string }) {
+function Paths({ ground, env }: { ground: string; env: 'earth' | 'moon' }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const color = useMemo(() => (luminance(ground) > 0.8 ? '#B6BBBE' : mix(ground, '#D4D4CF', 0.7)), [ground]);
   const segs = useMemo(() => {
     const out: [number, number, number, number][] = [];
     const ringR = CITY_RADIUS + 5;
-    for (const id of STATION_IDS) {
+    for (const id of stationsFor(env)) {
       if (id === 'city') continue;
       const st = STATIONS[id];
       const [px, pz] = st.pos;
@@ -164,7 +136,7 @@ function Paths({ ground }: { ground: string }) {
       out.push([Math.cos(a0) * ringR, Math.sin(a0) * ringR, Math.cos(a1) * ringR, Math.sin(a1) * ringR]);
     }
     return out;
-  }, []);
+  }, [env]);
   const geo = useMemo(() => new THREE.BoxGeometry(1, 0.08, 1), []);
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -8 }), [color]);
   useLayoutEffect(() => {

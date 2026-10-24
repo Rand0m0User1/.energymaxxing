@@ -1,4 +1,4 @@
-// Sky colour, sun light, fill light and fog. Off Earth: black sky with stars, Earth in the sky (Moon) or below (orbit).
+// Sky colour, sun light, fill light and fog. On the Moon: black sky with stars and Earth hanging in the sky.
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -16,13 +16,10 @@ const WHITE = new THREE.Color('#ffffff');
 /**
  * Soft night light so the island stays readable after dark without looking like day.
  * Earth: cool moonlight from the south-east. Moon: earthshine from where Earth hangs in the sky.
- * Orbit and Mars: faint starlight from overhead.
  */
-const NIGHT_KEY: Record<'earth' | 'moon' | 'orbit' | 'mars', { color: string; intensity: number; pos: [number, number, number] }> = {
+const NIGHT_KEY: Record<'earth' | 'moon', { color: string; intensity: number; pos: [number, number, number] }> = {
   earth: { color: '#B7C8EE', intensity: 0.5, pos: [160, 320, 240] },
   moon: { color: '#A9C6F2', intensity: 0.55, pos: [-210, 260, -240] },
-  orbit: { color: '#A3B2CC', intensity: 0.4, pos: [60, 400, 120] },
-  mars: { color: '#B4BACB', intensity: 0.4, pos: [120, 340, 200] },
 };
 
 const tmpA = new THREE.Color();
@@ -31,7 +28,7 @@ const tmpB = new THREE.Color();
 export default function SkyAndSun() {
   const placeId = useApp((s) => s.input.place);
   const place = PLACES[placeId];
-  const body = place.body;
+  const body = place.body === 'moon' ? 'moon' : 'earth';
   const scene = useThree((s) => s.scene);
   const sun = useRef<THREE.DirectionalLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
@@ -49,9 +46,7 @@ export default function SkyAndSun() {
 
   useEffect(() => {
     scene.background = bg;
-    if (body === 'earth') scene.fog = new THREE.Fog(bg.getHex(), 320, 1250);
-    else if (body === 'mars') scene.fog = new THREE.Fog(bg.getHex(), 380, 1700);
-    else scene.fog = null;
+    scene.fog = body === 'earth' ? new THREE.Fog(bg.getHex(), 320, 1250) : null;
     return () => {
       scene.fog = null;
     };
@@ -63,14 +58,12 @@ export default function SkyAndSun() {
     const dl = worldFrame.daylight;
 
     // Sky colour
-    if (body === 'moon' || body === 'orbit') {
+    if (body === 'moon') {
       bg.copy(colors.day);
     } else {
       bg.copy(colors.night).lerp(colors.day, dl);
-      if (body === 'earth') {
-        const warm = Math.max(0, 1 - Math.abs(elev - 1) / 9) * 0.5;
-        bg.lerp(WARM, warm);
-      }
+      const warm = Math.max(0, 1 - Math.abs(elev - 1) / 9) * 0.5;
+      bg.lerp(WARM, warm);
     }
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(bg);
 
@@ -80,7 +73,7 @@ export default function SkyAndSun() {
     if (l) {
       l.position.set(Math.sin(az) * Math.cos(el) * 400, Math.sin(el) * 400, -Math.cos(az) * Math.cos(el) * 400);
       const up = smoothstep(-1, 6, elev);
-      const peak = body === 'moon' ? 3.4 : body === 'orbit' ? 3.2 : body === 'mars' ? 2.1 : 2.7;
+      const peak = body === 'moon' ? 3.4 : 2.7;
       l.intensity = peak * up;
       const low = body === 'earth' ? 1 - smoothstep(2, 16, elev) : 0;
       l.color.copy(SUN_WHITE).lerp(SUN_WARM, low * 0.8);
@@ -89,7 +82,7 @@ export default function SkyAndSun() {
     // Fill light: brighter by day, cool blue at night so the island stays readable.
     const h = hemi.current;
     if (h) {
-      const airless = body === 'moon' || body === 'orbit';
+      const airless = body === 'moon';
       h.color.copy(NIGHT_FILL).lerp(airless ? tmpA.set('#9aa3b4') : colors.hemiDay, dl);
       h.groundColor.copy(NIGHT_GROUND).lerp(tmpB.copy(colors.ground).multiplyScalar(0.7), dl);
       const dayI = airless ? 0.35 : 1.0;
@@ -122,22 +115,21 @@ export default function SkyAndSun() {
         shadow-normalBias={0.4}
       />
       <directionalLight ref={moon} color={nightKey.color} intensity={0} position={nightKey.pos} />
-      {body !== 'earth' && <Stars body={body} />}
+      {body === 'moon' && <Stars />}
       {body === 'moon' && <EarthInSky />}
-      {body === 'orbit' && <EarthBelow />}
     </>
   );
 }
 
-function Stars({ body }: { body: 'orbit' | 'moon' | 'mars' }) {
+function Stars() {
   const geo = useMemo(() => {
-    const n = body === 'mars' ? 260 : 420;
+    const n = 420;
     const pos = new Float32Array(n * 3);
     let seed = 7;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     for (let i = 0; i < n; i++) {
       const u = rnd() * 2 - 1;
-      const yUnit = body === 'orbit' ? u : Math.abs(u) * 0.95 + 0.03;
+      const yUnit = Math.abs(u) * 0.95 + 0.03;
       const th = rnd() * Math.PI * 2;
       const rr = Math.sqrt(Math.max(0, 1 - yUnit * yUnit));
       const R = 2600;
@@ -148,14 +140,10 @@ function Stars({ body }: { body: 'orbit' | 'moon' | 'mars' }) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     return g;
-  }, [body]);
-  const mat = useRef<THREE.PointsMaterial>(null);
-  useFrame(() => {
-    if (body === 'mars' && mat.current) mat.current.opacity = 0.85 * worldFrame.night;
-  });
+  }, []);
   return (
     <points geometry={geo} frustumCulled={false}>
-      <pointsMaterial ref={mat} color="#e8ecf2" size={1.6} sizeAttenuation={false} fog={false} transparent opacity={0.85} depthWrite={false} />
+      <pointsMaterial color="#e8ecf2" size={1.6} sizeAttenuation={false} fog={false} transparent opacity={0.85} depthWrite={false} />
     </points>
   );
 }
@@ -171,22 +159,6 @@ function EarthInSky() {
       <mesh scale={1.015} rotation={[0.4, 0.3, 0]}>
         <sphereGeometry args={[110, 40, 28, 0, Math.PI * 2, 0.9, 0.5]} />
         <meshStandardMaterial color="#F2F5F8" roughness={1} metalness={0} emissive="#8A96A6" emissiveIntensity={0.35} transparent opacity={0.75} fog={false} />
-      </mesh>
-    </group>
-  );
-}
-
-function EarthBelow() {
-  // A large Earth far below the floating platform.
-  return (
-    <group position={[0, -3600, -600]}>
-      <mesh>
-        <sphereGeometry args={[3000, 72, 48]} />
-        <meshStandardMaterial color="#5B8DCB" roughness={1} metalness={0} emissive="#2B4E7E" emissiveIntensity={0.5} fog={false} />
-      </mesh>
-      <mesh scale={1.004} rotation={[0.3, 0, 0.2]}>
-        <sphereGeometry args={[3000, 72, 48, 0, Math.PI * 2, 0.15, 0.35]} />
-        <meshStandardMaterial color="#F3F6F9" roughness={1} metalness={0} emissive="#8995a5" emissiveIntensity={0.3} transparent opacity={0.7} fog={false} />
       </mesh>
     </group>
   );

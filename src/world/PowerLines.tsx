@@ -1,9 +1,9 @@
 // Pylons and thin wires from each station to the central substation, distribution lines to the districts,
-// and the solar-to-battery line. All static geometry, built once.
+// and the solar-to-battery line. Static geometry, rebuilt when switching between Earth and the Moon.
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { STATIONS, DISTRICT_WEDGES, cityEntry } from './layout';
-import { STATION_IDS } from '../types';
+import { useApp, type Env } from '../store';
+import { STATIONS, DISTRICT_WEDGES, cityEntry, stationsFor } from './layout';
 import { ARM_Y, CHARGE_FROM, CHARGE_TO, CITY_DISTRICTS, DIST_POLE_H, SUB_Y, TRUNK_H } from './cityLayout';
 
 interface Pole { x: number; z: number; h: number; angle: number; arm: number }
@@ -43,7 +43,7 @@ function addWire(pos: number[], a: THREE.Vector3, b: THREE.Vector3, sag: number)
   }
 }
 
-function buildNetwork() {
+function buildNetwork(env: Env) {
   const poles: Pole[] = [];
   const wire: number[] = [];
   const perp = (angle: number, d: number) => [-Math.sin(angle) * d, Math.cos(angle) * d] as const;
@@ -62,7 +62,7 @@ function buildNetwork() {
     return poles[poles.length - 1];
   };
 
-  for (const id of STATION_IDS) {
+  for (const id of stationsFor(env)) {
     const lf = STATIONS[id].lineFrom;
     if (!lf) continue;
     const e = cityEntry(lf);
@@ -99,7 +99,8 @@ function buildNetwork() {
 }
 
 export default function PowerLines() {
-  const { poles, wire } = useMemo(buildNetwork, []);
+  const env = useApp((s) => s.env);
+  const { poles, wire } = useMemo(() => buildNetwork(env), [env]);
   const poleRef = useRef<THREE.InstancedMesh>(null);
   const armRef = useRef<THREE.InstancedMesh>(null);
   const poleGeo = useMemo(() => new THREE.CylinderGeometry(0.16, 0.42, 1, 6).translate(0, 0.5, 0), []);
