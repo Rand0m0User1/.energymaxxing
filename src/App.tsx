@@ -18,6 +18,9 @@ import LessonPicker from './lessons/LessonPicker';
 import PresenterOverlay from './lessons/PresenterOverlay';
 import ToolHost from './tools/ToolHost';
 
+// Expose the store for the headless smoke test (scripts/smoke.mjs) and for debugging.
+if (typeof window !== 'undefined') (window as unknown as { __app: typeof useApp }).__app = useApp;
+
 function useTicker() {
   const tick = useApp((s) => s.tick);
   useEffect(() => {
@@ -54,7 +57,7 @@ export default function App() {
             <TopBar />
             {screen === 'tour' && (lesson ? <LessonCard /> : <LessonPicker />)}
             <PlantPanel />
-            <Dashboard />
+            {!tool && <Dashboard />}
             <BottomBar />
             <StationPrompt />
           </>

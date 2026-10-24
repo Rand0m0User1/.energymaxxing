@@ -1,0 +1,143 @@
+/* Lessons, lesson picker, presenter strip and title screen. Uses tokens from styles/tokens.css. */
+
+/* ---------- Lesson card ---------- */
+.lesson-card {
+  position: absolute;
+  top: 68px;
+  left: 16px;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 68px - 300px);
+  min-height: 0;
+  overflow-y: auto;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+@media (max-height: 760px) {
+  .lesson-card { max-height: calc(100vh - 68px - 200px); }
+}
+@media (max-width: 900px) {
+  .lesson-card { top: auto; bottom: 96px; left: 16px; right: 16px; width: auto; max-height: 42vh; }
+}
+.lesson-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lesson-x {
+  width: 24px; height: 24px; border-radius: 999px; border: none; background: transparent; color: var(--ink-2);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+}
+.lesson-x:hover { background: var(--accent-soft); color: var(--ink); }
+.panel h2.lesson-title { margin: 0; font-size: var(--fs-lg); line-height: 1.25; }
+.lesson-dots { display: flex; gap: 5px; }
+.lesson-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.lesson-dot.past { background: var(--ink-3); }
+.lesson-dot.now { background: var(--accent); }
+.lesson-body { display: flex; flex-direction: column; gap: 8px; }
+.lesson-text { margin: 0; font-size: var(--fs-md); line-height: 1.45; }
+.lesson-text + .lesson-text { margin-top: 6px; }
+.lesson-kicker { color: var(--good); font-weight: 600; }
+.lesson-term .real-term { margin-top: 0; }
+.lesson-aha .lesson-text, p.lesson-aha { font-weight: 600; color: var(--ink); }
+p.lesson-aha { margin: 0; border-left: 2px solid var(--accent); padding-left: 10px; }
+.lesson-aha .lesson-text { border-left: 2px solid var(--accent); padding-left: 10px; }
+
+.lesson-predict { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.55); border: 1px solid var(--line); }
+.lesson-predict-q { font-weight: 600; }
+.lesson-choices { display: flex; flex-direction: column; gap: 5px; }
+.lesson-choice {
+  text-align: left; border: 1px solid var(--line-strong); background: var(--panel-solid); border-radius: var(--radius-sm);
+  padding: 6px 10px; font-size: var(--fs-sm); cursor: pointer;
+}
+.lesson-choice:hover:not(:disabled) { background: #fff; border-color: var(--ink-3); }
+.lesson-choice:disabled { cursor: default; color: var(--ink-2); }
+.lesson-choice.picked { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.lesson-choice.correct { border-color: var(--good); color: var(--ink); box-shadow: inset 3px 0 0 var(--good); }
+
+.lesson-do { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.lesson-watch { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 6px; }
+.lesson-watch-item {
+  display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.55); border: 1px solid var(--line);
+}
+.lesson-live { font-weight: 600; font-size: var(--fs-md); }
+.lesson-text .lesson-live { font-size: inherit; }
+
+.lesson-after { padding: 10px; border-radius: var(--radius-sm); background: var(--accent-soft); display: flex; flex-direction: column; gap: 4px; }
+.lesson-after.is-aha .lesson-text:last-of-type { font-weight: 600; }
+
+.lesson-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 2px; }
+.lesson-actions-col { flex-direction: column; align-items: stretch; }
+.lesson-links { display: flex; justify-content: space-between; gap: 8px; }
+.lesson-link { border: none; background: none; padding: 2px 0; color: var(--accent); cursor: pointer; font-size: var(--fs-xs); }
+.lesson-link:hover { text-decoration: underline; }
+
+/* ---------- Lesson picker ---------- */
+.picker {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(920px, calc(100vw - 32px)); max-height: calc(100vh - 140px); overflow-y: auto; z-index: 30;
+}
+.picker-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.panel h2.picker-title { font-size: var(--fs-xl); margin: 0 0 2px; }
+.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.picker-tile {
+  position: relative; text-align: left; display: flex; flex-direction: column; gap: 4px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.6); padding: 12px 14px;
+  transition: border-color 120ms, background 120ms;
+}
+.picker-tile:hover { background: #fff; border-color: var(--ink-3); }
+.picker-tile-top { display: flex; align-items: center; gap: 8px; }
+.picker-num {
+  width: 24px; height: 24px; border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--fs-xs); font-weight: 600; border: 1px solid var(--line-strong); color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.picker-tile.done .picker-num { background: var(--good); border-color: var(--good); color: #fff; }
+.picker-name { font-weight: 600; font-size: var(--fs-md); line-height: 1.25; }
+.picker-meta { font-size: var(--fs-xs); color: var(--ink-2); }
+.picker-learn { font-size: var(--fs-sm); color: var(--ink); }
+.picker-done { position: absolute; top: 10px; right: 12px; font-size: var(--fs-xs); color: var(--good); display: inline-flex; align-items: center; gap: 3px; }
+.picker-foot { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* ---------- Presenter strip ---------- */
+.presenter-strip {
+  position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 60;
+  display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; max-width: min(720px, calc(100vw - 32px));
+}
+.presenter-label { font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.presenter-say { font-size: var(--fs-xs); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.presenter-text { display: flex; flex-direction: column; min-width: 0; }
+.presenter-btns { display: flex; gap: 4px; flex: none; }
+
+/* ---------- Title screen ---------- */
+.overlay > .title-screen, .title-screen { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+.title-scrim {
+  position: absolute; top: 0; bottom: 0; left: 0; width: min(760px, 100%);
+  background: linear-gradient(90deg, rgba(238, 240, 238, 0.94) 0%, rgba(238, 240, 238, 0.86) 55%, rgba(238, 240, 238, 0) 100%);
+}
+.title-content {
+  position: absolute; top: 0; bottom: 0; left: 0; width: min(620px, 100%); pointer-events: auto;
+  display: flex; flex-direction: column; justify-content: center; gap: 0; padding: 48px clamp(16px, 6vw, 88px);
+}
+.title-name { font-size: clamp(36px, 5vw, 56px); line-height: 1.05; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 12px; color: var(--ink); }
+.title-sub { font-size: var(--fs-xl); line-height: 1.25; color: var(--ink); margin: 0 0 10px; font-weight: 500; }
+.title-line { font-size: var(--fs-lg); color: var(--ink-2); margin: 0 0 28px; }
+.title-menu { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0 0 32px; }
+.title-btn {
+  border: none; background: none; cursor: pointer; padding: 8px 0; font-size: var(--fs-lg); color: var(--ink);
+  display: inline-flex; align-items: center; gap: 10px; border-radius: 6px;
+}
+.title-btn:hover { color: var(--accent); }
+.title-btn .arrow { opacity: 0; transform: translateX(-4px); transition: opacity 120ms, transform 120ms; color: var(--accent); }
+.title-btn:hover .arrow, .title-btn:focus-visible .arrow { opacity: 1; transform: none; }
+.title-btn.primary {
+  background: var(--accent); color: #fff; padding: 10px 20px; border-radius: 999px; margin-bottom: 6px; font-weight: 500;
+}
+.title-btn.primary:hover { background: #194f75; color: #fff; }
+.title-btn.primary .arrow { opacity: 1; transform: none; color: #fff; }
+.title-foot { font-size: var(--fs-xs); color: var(--ink-2); display: flex; flex-direction: column; gap: 3px; }
+.title-foot-row { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.title-link { border: none; background: none; padding: 0; color: var(--accent); cursor: pointer; font-size: var(--fs-xs); }
+.title-link:hover { text-decoration: underline; }
+@media (max-width: 700px) {
+  .title-scrim { width: 100%; background: rgba(238, 240, 238, 0.86); }
+}

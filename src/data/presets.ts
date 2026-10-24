@@ -17,7 +17,7 @@ export function defaultInput(): SimInput {
       geothermal: { ...off, gw: 0.1 },
       fusion: { ...off, gw: 0.3 },
       hydro: { ...off, gw: 0.1 },
-      gas: { on: true, gw: 1.2, schedule: null },
+      gas: { on: true, gw: 1.6, schedule: null },
     },
     battery: { on: true, gw: 1.5, gwh: 19, mode: 'auto', schedule: null },
     districts: {
@@ -70,7 +70,9 @@ export function presetInput(id: PresetId, current: SimInput): SimInput {
     case 'firmMix': {
       const s = keepPlace(current.place);
       s.plants.gas.on = false;
-      s.plants.fission = { on: true, gw: 0.6, schedule: null };
+      s.plants.solar = { on: true, gw: 3, schedule: null };
+      s.plants.fission = { on: true, gw: 1, schedule: null };
+      s.battery = { ...s.battery, on: true, gw: 1.5, gwh: 8 };
       return s;
     }
     case 'moonBase': {
@@ -83,14 +85,14 @@ export function presetInput(id: PresetId, current: SimInput): SimInput {
     case 'marsBase': {
       const s = keepPlace('marsEquator');
       s.plants.gas.on = false;
-      s.plants.solar = { on: true, gw: 8, schedule: null };
-      s.battery = { ...s.battery, on: true, gw: 1.5, gwh: 19 };
+      s.plants.solar = { on: true, gw: 14, schedule: null };
+      s.battery = { ...s.battery, on: true, gw: 2, gwh: 24 };
       return s;
     }
     case 'orbit': {
       const s = keepPlace('leo');
       s.plants.gas.on = false;
-      s.plants.solar = { on: true, gw: 2, schedule: null };
+      s.plants.solar = { on: true, gw: 2.8, schedule: null };
       s.battery = { ...s.battery, on: true, gw: 1.5, gwh: 2 };
       return s;
     }

@@ -46,6 +46,10 @@ export interface SimInput {
   events: WeatherEvent[];
   seed: number;
   costs: CostSettings;
+  /** Optional: replace the district model with a flat demand of this many GW (used by the benchmark test). */
+  flatDemandGW?: number;
+  /** Optional: which day of year an orbit (one-day) sim covers. Default: the place's hardest day. */
+  orbitDay?: number;
 }
 
 export interface SimTotals {
@@ -94,6 +98,8 @@ export interface SimResult {
   sun: Float32Array;
   /** 0..1 wind factor per step, for turbine animation. */
   wind: Float32Array;
+  /** Optional: 0..1 hydro reservoir fill per step (for the dam visual). */
+  hydroStore?: Float32Array;
   totals: SimTotals;
 }
 

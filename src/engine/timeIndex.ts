@@ -43,3 +43,14 @@ export function formatDate(hourOfYear: number): string {
   const m = monthOf(d);
   return `${MONTH_NAMES[m]} ${d - MONTH_START_DAY[m] + 1}`;
 }
+
+/** Hour of year at the start of step i of a result (orbit results cover one day from startHour). */
+export function hourAtStep(result: SimResult, i: number): number {
+  return result.startHour + i * result.stepHours;
+}
+
+/** Index of the first step of the month (0..11) in a full-year result (0 for orbit results). */
+export function monthStartStep(result: SimResult, month: number): number {
+  if (result.steps * result.stepHours < 8760) return 0;
+  return Math.round((MONTH_START_DAY[Math.max(0, Math.min(11, month))] * 24 - result.startHour) / result.stepHours);
+}

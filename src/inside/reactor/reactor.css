@@ -1,0 +1,85 @@
+/* Reactor inside view. All classes are prefixed rx- so they never clash with other modules. */
+.rx-root { position: relative; width: 100%; height: 100%; display: flex; min-height: 0; background: var(--bg); pointer-events: auto; }
+.rx-main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.rx-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; isolation: isolate; cursor: grab; }
+.rx-stage.rx-fire { cursor: crosshair; }
+.rx-stage canvas { display: block; }
+
+.rx-side { width: 340px; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 12px 0; min-height: 0; }
+.rx-side .panel { overflow-y: auto; min-height: 0; flex: 1; }
+.rx-levels { list-style: none; margin: 8px 0 10px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.rx-levels button {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid transparent;
+  background: transparent; border-radius: var(--radius-sm); padding: 5px 8px; cursor: pointer; font-size: var(--fs-sm); color: var(--ink-2);
+}
+.rx-levels button:hover { background: var(--accent-soft); }
+.rx-levels button[aria-current='step'] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.rx-levels .rx-n {
+  width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line-strong); font-size: 11px; flex: none; background: var(--panel-solid);
+}
+.rx-levels button[aria-current='step'] .rx-n { border-color: var(--accent); }
+.rx-nav { display: flex; gap: 8px; margin-bottom: 12px; }
+.rx-nav .btn { flex: 1; }
+.rx-sec { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+.rx-sec:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+.rx-lead { font-size: var(--fs-md); margin: 0 0 8px; }
+.rx-p { font-size: var(--fs-sm); margin: 0 0 8px; color: var(--ink); }
+.rx-p.muted { color: var(--ink-2); }
+.rx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0 4px; font-size: var(--fs-sm); }
+.rx-ends { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--ink-3); margin-top: -2px; }
+.rx-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 8px; }
+.rx-key { display: inline-block; border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 5px; font-size: 11px; background: var(--panel-solid); }
+.rx-legend { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; font-size: var(--fs-xs); color: var(--ink-2); }
+.rx-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.rx-swatch { width: 18px; height: 4px; border-radius: 2px; flex: none; }
+
+.rx-details { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 8px; }
+.rx-details summary { cursor: pointer; font-size: var(--fs-sm); font-weight: 600; list-style: none; display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+.rx-details summary::-webkit-details-marker { display: none; }
+.rx-details summary svg { transition: transform 140ms; }
+.rx-details[open] summary svg { transform: rotate(90deg); }
+.rx-details .rx-p { margin-top: 6px; }
+
+/* Bottom strip */
+.rx-strip { flex: none; display: grid; grid-template-columns: minmax(220px, 0.8fr) 1.6fr; gap: 10px; padding: 0 12px 12px; }
+.rx-strip .panel { padding: 10px 14px; }
+.rx-strip h3 { font-size: var(--fs-sm); margin: 0 0 6px; display: flex; align-items: center; justify-content: space-between; }
+.rx-steps { margin: 0; padding-left: 18px; font-size: var(--fs-xs); color: var(--ink); display: flex; flex-direction: column; gap: 3px; }
+.rx-trade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: var(--fs-xs); }
+.rx-trade b { display: block; font-size: var(--fs-xs); margin-bottom: 2px; }
+.rx-trade p { margin: 0; color: var(--ink); }
+.rx-strip-toggle { position: absolute; right: 12px; bottom: 12px; z-index: 31; }
+
+/* Overlays on the canvas */
+.rx-over { position: absolute; z-index: 30; pointer-events: none; }
+.rx-over .panel { pointer-events: auto; }
+.rx-meter { top: 12px; left: 12px; width: 270px; }
+.rx-meter .panel { padding: 10px 12px; }
+.rx-meter-title { font-size: var(--fs-sm); font-weight: 600; margin: 0; }
+.rx-meter-zone { font-size: var(--fs-sm); font-weight: 600; }
+.rx-meter-note { font-size: var(--fs-xs); color: var(--ink-2); margin: 6px 0 0; }
+.rx-safety { margin-top: 8px; padding: 8px 10px; border-radius: var(--radius-sm); background: rgba(201, 138, 27, 0.1); border: 1px solid rgba(201, 138, 27, 0.35); font-size: var(--fs-xs); color: var(--ink); }
+.rx-counter { left: 12px; bottom: 12px; max-width: 420px; }
+.rx-counter .panel { padding: 8px 12px; font-size: var(--fs-xs); }
+.rx-counter strong { font-weight: 600; }
+.rx-keybox { right: 12px; top: 12px; max-width: 220px; }
+.rx-keybox .panel { padding: 8px 12px; }
+.rx-hint { left: 50%; top: 14px; transform: translateX(-50%); }
+.rx-hint .panel { padding: 6px 12px; font-size: var(--fs-sm); }
+.rx-power { margin-top: 8px; }
+.rx-bar { height: 8px; border-radius: 4px; background: rgba(20, 24, 28, 0.08); overflow: hidden; margin-top: 4px; }
+.rx-bar > div { height: 100%; background: var(--c-fission); border-radius: 4px; transition: width 120ms linear; }
+
+/* 3D labels */
+.rx-label {
+  font-size: 12px; line-height: 1; white-space: nowrap; padding: 4px 8px; border-radius: 999px;
+  background: var(--panel-solid); border: 1px solid var(--line-strong); color: var(--ink); box-shadow: 0 2px 8px rgba(20, 24, 28, 0.08);
+  pointer-events: none; user-select: none;
+}
+
+@media (max-width: 900px) {
+  .rx-side { width: 290px; }
+  .rx-strip { grid-template-columns: 1fr; }
+  .rx-trade { grid-template-columns: 1fr; gap: 6px; }
+}
